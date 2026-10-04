@@ -1,31 +1,19 @@
 // ── Welcome Hero ──────────────────────────────────────────────
 .welcome-hero {
-  border: none !important;
-  border-radius: 16px !important;
-  background: linear-gradient(135deg, #5B5CEB 0%, #7c3aed 100%) !important;
+  border: 1px solid #E2E8F0 !important;
+  border-left: 4px solid #1769AA !important;
+  border-radius: 14px !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 3px 14px rgba(18, 48, 74, 0.05) !important;
   overflow: hidden;
   position: relative;
 
   &::after {
-    content: '';
-    position: absolute;
-    top: -60px;
-    right: -40px;
-    width: 220px;
-    height: 220px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
+    display: none;
   }
 
   &::before {
-    content: '';
-    position: absolute;
-    bottom: -80px;
-    left: 30%;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
+    display: none;
   }
 
   .card-body {
@@ -50,27 +38,27 @@
   span {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #fff;
+    color: #1769AA;
   }
 }
 
 .hero-greeting {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: #64748B;
 }
 
 .hero-name {
   font-size: 1.375rem;
   font-weight: 700;
-  color: #fff;
+  color: #172B4D;
   letter-spacing: -0.01em;
 }
 
 .hero-role {
-  background: rgba(255, 255, 255, 0.18) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #fff;
+  background: #EAF4FC !important;
+  border: 1px solid #CFE6F7;
+  color: #1769AA;
   font-weight: 600;
   font-size: 0.6875rem;
   padding: 4px 12px;
@@ -128,7 +116,7 @@
   &:hover {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07) !important;
     transform: translateY(-2px);
-    border-color: #d9d9fb !important;
+    border-color: #B9D9EF !important;
 
     .stat-icon {
       transform: scale(1.06);
@@ -164,11 +152,11 @@
   i { font-size: 1.25rem; }
 }
 
-.stat-icon-primary { background: #EDEDFE; color: #5B5CEB; }
+.stat-icon-primary { background: #EAF4FC; color: #1769AA; }
 .stat-icon-success { background: #f0fdf4; color: #16a34a; }
 .stat-icon-warning { background: #fff7ed; color: #ea580c; }
 .stat-icon-danger { background: #fef2f2; color: #dc2626; }
-.stat-icon-info { background: #eff6ff; color: #2196f3; }
+.stat-icon-info { background: #EAF4FC; color: #2F80ED; }
 
 // ── Today's summary cards ─────────────────────────────────────
 .summary-card {
@@ -182,7 +170,7 @@
   &:hover {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07) !important;
     transform: translateY(-2px);
-    border-color: #d9d9fb !important;
+    border-color: #B9D9EF !important;
   }
 }
 
@@ -216,7 +204,7 @@
   &:focus-visible {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07) !important;
     transform: translateY(-2px);
-    border-color: #d9d9fb !important;
+    border-color: #B9D9EF !important;
 
     .quick-arrow {
       transform: translateX(3px);
