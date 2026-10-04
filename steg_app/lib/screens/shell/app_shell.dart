@@ -142,6 +142,7 @@ class _FloatingBottomBar extends StatelessWidget {
               Expanded(
                 child: _FloatingDestination(
                   destination: destinations[i],
+                  compactLabel: _compactLabel(i),
                   selected: i == selectedIndex,
                   onTap: () => onDestinationSelected(i),
                 ),
@@ -151,47 +152,60 @@ class _FloatingBottomBar extends StatelessWidget {
       ),
     );
   }
+
+  String _compactLabel(int index) {
+    return switch (index) {
+      0 => 'Accueil',
+      1 => 'Agenda',
+      2 => 'Tâches',
+      3 => 'Alertes',
+      _ => 'Profil',
+    };
+  }
 }
 
 class _FloatingDestination extends StatelessWidget {
   const _FloatingDestination({
     required this.destination,
+    required this.compactLabel,
     required this.selected,
     required this.onTap,
   });
 
   final NavigationDestination destination;
+  final String compactLabel;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final label = destination.label;
     return Semantics(
       selected: selected,
       button: true,
-      label: label,
+      label: destination.label,
       child: Tooltip(
-        message: destination.tooltip ?? label,
+        message: destination.tooltip ?? destination.label,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: selected ? 10 : 6,
+            ),
             decoration: BoxDecoration(
               color: selected
                   ? theme.colorScheme.primaryContainer
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
+                  duration: const Duration(milliseconds: 160),
                   transitionBuilder: (child, animation) => ScaleTransition(
                     scale: animation,
                     child: child,
@@ -210,7 +224,7 @@ class _FloatingDestination extends StatelessWidget {
                   const SizedBox(width: 5),
                   Flexible(
                     child: Text(
-                      label,
+                      compactLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelSmall?.copyWith(
