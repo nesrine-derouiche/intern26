@@ -1,13 +1,13 @@
 // ═══════════════════════════════════════════════════════════════════
 //  STEG Design System — Premium SaaS Dashboard
-//  Color: Purple #5B5CEB | Spacing: 8px grid | Radius: 16px cards
+//  Color: STEG blue #1769AA | Spacing: 8px grid | Radius: 12px cards
 // ═══════════════════════════════════════════════════════════════════
 
 // ── Design Tokens ─────────────────────────────────────────────
-$primary: #5B5CEB;
-$primary-hover: #4B4CD4;
-$primary-light: #EDEDFE;
-$primary-ring: rgba(91, 92, 235, 0.15);
+$primary: #1769AA;
+$primary-hover: #125A91;
+$primary-light: #EAF4FC;
+$primary-ring: rgba(23, 105, 170, 0.18);
 
 $success: #16a34a;
 $success-light: #f0fdf4;
@@ -19,17 +19,17 @@ $info: #0284c7;
 $info-light: #f0f9ff;
 
 $surface: #ffffff;
-$bg: #f8fafc;
-$text: #111827;
-$text-secondary: #6b7280;
-$text-tertiary: #9ca3af;
-$border: #e5e7eb;
-$border-light: #f3f4f6;
+$bg: #f4f7fb;
+$text: #172B4D;
+$text-secondary: #64748b;
+$text-tertiary: #94a3b8;
+$border: #dfe7f0;
+$border-light: #edf2f7;
 
 $radius-sm: 6px;
 $radius-md: 8px;
 $radius-lg: 12px;
-$radius-xl: 16px;
+$radius-xl: 14px;
 
 $shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
 $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
@@ -1923,4 +1923,137 @@ ng-scrollbar {
   
   .table-responsive { overflow: visible; }
   .table { font-size: 10pt; }
+}
+
+// ─── STEG Operations Refresh ───────────────────────────────────────
+// Shared finishing layer for the admin shell. Page components keep their
+// existing behavior while inheriting a calmer, denser operations workspace.
+body {
+  background: $bg !important;
+}
+
+.pc-sidebar {
+  background: $surface !important;
+  border-right-color: $border !important;
+  box-shadow: 8px 0 24px rgba(23, 43, 77, 0.05) !important;
+
+  .m-header {
+    background: $surface !important;
+    border-bottom-color: $border-light !important;
+  }
+
+  .nav-link {
+    border-radius: 10px !important;
+    margin: 2px 0;
+
+    .coded-micon {
+      border-radius: 10px;
+      background: $primary-light;
+    }
+
+    &:hover {
+      background: $primary-light !important;
+      border-color: rgba(23, 105, 170, 0.12);
+      transform: none;
+    }
+  }
+
+  .nav-item.active > .nav-link,
+  .coded-hasmenu.active > .nav-link,
+  .coded-hasmenu.coded-trigger > .nav-link {
+    background: $primary-light !important;
+    border-color: rgba(23, 105, 170, 0.16);
+    box-shadow: none;
+  }
+}
+
+.pc-header {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-bottom-color: $border !important;
+  box-shadow: 0 1px 0 rgba(23, 43, 77, 0.03) !important;
+
+  .header-search .form-control {
+    background: $bg;
+    border-color: $border;
+    border-radius: 10px;
+  }
+
+  .pc-head-link:hover,
+  .hamburger-btn:hover {
+    background: $primary-light;
+    border-color: transparent;
+  }
+}
+
+.main-body {
+  padding: 28px clamp(16px, 3vw, 36px) 36px;
+}
+
+.page-wrapper {
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
+.card {
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(23, 43, 77, 0.04) !important;
+
+  &:hover {
+    transform: none;
+    box-shadow: 0 8px 24px rgba(23, 43, 77, 0.07) !important;
+  }
+}
+
+.table-responsive {
+  border-radius: 10px;
+  border-color: $border;
+}
+
+.table tbody tr:hover {
+  background: $primary-light !important;
+}
+
+.btn,
+.btn-primary-custom,
+.btn-steg {
+  min-height: 38px;
+  border-radius: 9px !important;
+}
+
+.breadcrumb {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+@media (max-width: 767px) {
+  .main-body {
+    padding: 18px 12px 28px;
+  }
+
+  .pc-header .header-wrapper {
+    padding: 0 12px;
+  }
+
+  .page-wrapper {
+    width: 100%;
+  }
+
+  .card .card-body {
+    padding: 16px;
+  }
+
+  .card .card-header {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+  }
+
+  .table-responsive {
+    margin: 0 -2px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  .main-body {
+    padding: 22px 18px 32px;
+  }
 }
