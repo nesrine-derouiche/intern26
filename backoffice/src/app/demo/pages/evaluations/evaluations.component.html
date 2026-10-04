@@ -1,0 +1,135 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Évaluations</h4>
+      <p class="text-muted mb-0">Évaluez les performances de vos stagiaires</p>
+    </div>
+    <button class="btn btn-primary-custom" (click)="openAdd()">
+      <i class="ti ti-plus me-1"></i> Nouvelle évaluation
+    </button>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control" placeholder="Rechercher un stagiaire..."
+            [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <span class="text-muted">{{ filtered().length }} évaluation(s)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr><th>Stagiaire</th><th>Encadrant</th><th>Note finale</th><th>Date</th><th>Commentaire</th><th class="text-center">Actions</th></tr>
+        </thead>
+        <tbody>
+          @for (e of filtered(); track e.id) {
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar avatar-sm bg-light-primary me-3">
+                  <span class="text-primary fw-bold">{{ e.stagiaire_prenom?.charAt(0) }}{{ e.stagiaire_nom?.charAt(0) }}</span>
+                </div>
+                <h6 class="mb-0">{{ e.stagiaire_prenom }} {{ e.stagiaire_nom }}</h6>
+              </div>
+            </td>
+            <td>{{ e.encadrant_prenom }} {{ e.encadrant_nom }}</td>
+            <td><span [class]="getNoteBadge(e.note_finale)" class="fs-6 px-3 py-1">{{ e.note_finale }}/20</span></td>
+            <td><span class="text-muted">{{ e.date_evaluation | date:'dd/MM/yyyy' }}</span></td>
+            <td><span class="text-muted small">{{ e.commentaire | slice:0:40 }}{{ e.commentaire?.length > 40 ? '...' : '' }}</span></td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(e.id)"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+          } @empty {
+          <tr><td colspan="6" class="text-center text-muted py-4">Aucune évaluation trouvée</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (showModal()) {
+<div class="modal-backdrop-custom" (click)="closeModal()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nouvelle évaluation</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+        <div class="mb-3">
+          <label class="form-label">Stage *</label>
+          <select class="form-select" [(ngModel)]="form.stage_id">
+            <option value="">Sélectionner un stage</option>
+            @for (s of stages(); track s.id) {
+            <option [value]="s.id">{{ s.stagiaire_prenom }} {{ s.stagiaire_nom }} — {{ s.departement_nom }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="note-preview mb-4 text-center">
+          <div class="note-label text-muted mb-2">Note finale estimée</div>
+          <span [class]="getNoteBadge(calcNote())" class="fs-3 px-4 py-2">{{ calcNote() }}/20</span>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Technique (1-20)</label>
+            <input type="range" class="form-range" min="1" max="20" [(ngModel)]="form.technique" />
+            <div class="text-center fw-bold text-primary">{{ form.technique }}</div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Communication (1-20)</label>
+            <input type="range" class="form-range" min="1" max="20" [(ngModel)]="form.communication" />
+            <div class="text-center fw-bold text-primary">{{ form.communication }}</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Autonomie (1-20)</label>
+            <input type="range" class="form-range" min="1" max="20" [(ngModel)]="form.autonomie" />
+            <div class="text-center fw-bold text-primary">{{ form.autonomie }}</div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Ponctualité (1-20)</label>
+            <input type="range" class="form-range" min="1" max="20" [(ngModel)]="form.ponctualite" />
+            <div class="text-center fw-bold text-primary">{{ form.ponctualite }}</div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Qualité (1-20)</label>
+            <input type="range" class="form-range" min="1" max="20" [(ngModel)]="form.qualite" />
+            <div class="text-center fw-bold text-primary">{{ form.qualite }}</div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Commentaire</label>
+          <textarea class="form-control" [(ngModel)]="form.commentaire" rows="3" placeholder="Appréciation générale..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="save()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Créer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

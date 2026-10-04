@@ -1,0 +1,206 @@
+<app-landing-header />
+
+<main class="auth-shell">
+  <div class="auth-card auth-card--wide">
+    <header class="auth-card__head">
+      <span class="auth-card__icon"><app-icon name="graduation-cap" /></span>
+      <h1 class="auth-card__title">Créer un compte candidat</h1>
+      <p class="auth-card__subtitle">
+        Inscrivez-vous gratuitement pour postuler aux offres de stage. Une vérification de votre
+        adresse email est requise.
+      </p>
+    </header>
+
+    @if (success(); as message) {
+      <div class="auth-alert auth-alert--success" role="status">
+        {{ message }}
+        @if (verificationLink(); as link) {
+          <div style="margin-top: 10px">
+            <a class="btn btn--outline" [href]="link">Ouvrir le lien de vérification (dev)</a>
+          </div>
+        }
+      </div>
+    } @else {
+      @if (error(); as message) {
+        <div class="auth-alert auth-alert--error" role="alert">{{ message }}</div>
+      }
+
+      <form (ngSubmit)="onSubmit()">
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="nom">Nom</label>
+            <input
+              class="field__input"
+              id="nom"
+              name="nom"
+              type="text"
+              required
+              autocomplete="family-name"
+              [ngModel]="nom()"
+              (ngModelChange)="nom.set($event)"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="prenom">Prénom</label>
+            <input
+              class="field__input"
+              id="prenom"
+              name="prenom"
+              type="text"
+              required
+              autocomplete="given-name"
+              [ngModel]="prenom()"
+              (ngModelChange)="prenom.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="email">Adresse email</label>
+          <input
+            class="field__input"
+            id="email"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="vous@exemple.tn"
+            [ngModel]="email()"
+            (ngModelChange)="email.set($event)"
+          />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="telephone">Téléphone</label>
+          <input
+            class="field__input"
+            id="telephone"
+            name="telephone"
+            type="tel"
+            autocomplete="tel"
+            placeholder="+216 XX XXX XXX"
+            [ngModel]="telephone()"
+            (ngModelChange)="telephone.set($event)"
+          />
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="password">Mot de passe</label>
+            <input
+              class="field__input"
+              id="password"
+              name="password"
+              type="password"
+              required
+              autocomplete="new-password"
+              placeholder="8 caractères min., 1 majuscule, 1 chiffre"
+              [ngModel]="password()"
+              (ngModelChange)="password.set($event)"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="confirm">Confirmer le mot de passe</label>
+            <input
+              class="field__input"
+              id="confirm"
+              name="confirm"
+              type="password"
+              required
+              autocomplete="new-password"
+              [ngModel]="confirm()"
+              (ngModelChange)="confirm.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="universite">Université / École</label>
+            <input
+              class="field__input"
+              id="universite"
+              name="universite"
+              type="text"
+              placeholder="Ex. : INSAT, ENIT…"
+              [ngModel]="universite()"
+              (ngModelChange)="universite.set($event)"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="specialite">Spécialité</label>
+            <input
+              class="field__input"
+              id="specialite"
+              name="specialite"
+              type="text"
+              placeholder="Ex. : Génie Logiciel"
+              [ngModel]="specialite()"
+              (ngModelChange)="specialite.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="niveau">Niveau d'études</label>
+          <select
+            class="field__input"
+            id="niveau"
+            name="niveau"
+            [ngModel]="niveau()"
+            (ngModelChange)="niveau.set($event)"
+          >
+            @for (option of niveaux; track option) {
+              <option [ngValue]="option">{{ option }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="competences">Compétences</label>
+          <input
+            class="field__input"
+            id="competences"
+            name="competences"
+            type="text"
+            placeholder="Ex. : Angular, TypeScript, SQL (séparés par des virgules)"
+            [ngModel]="competencesInput()"
+            (ngModelChange)="competencesInput.set($event)"
+          />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="langues">Langues</label>
+          <input
+            class="field__input"
+            id="langues"
+            name="langues"
+            type="text"
+            placeholder="Ex. : Français, Anglais, Arabe"
+            [ngModel]="languesInput()"
+            (ngModelChange)="languesInput.set($event)"
+          />
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit" [disabled]="submitting()">
+          @if (submitting()) {
+            <app-icon name="loader" />
+            Création du compte…
+          } @else {
+            Créer mon compte
+          }
+        </button>
+      </form>
+
+      <div class="auth-switch">
+        Déjà inscrit ?
+        <a routerLink="/connexion">Se connecter</a>
+      </div>
+    }
+  </div>
+</main>
+
+<app-landing-footer />

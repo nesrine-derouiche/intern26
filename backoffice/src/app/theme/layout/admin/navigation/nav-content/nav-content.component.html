@@ -1,0 +1,26 @@
+<!-- Vertical layout -->
+<ng-scrollbar style="height: calc(100vh - 64px)" visibility="hover">
+  <div class="navbar-content">
+    <ul class="nav coded-inner-navbar" (click)="fireOutClick()" (keydown.space)="fireOutClick()" (keydown.enter)="fireOutClick()">
+      @for (item of navigations; track item) {
+        @if (item.type === 'group') {
+          <app-nav-group [item]="item" />
+        } @else if (item.type === 'collapse') {
+          <app-nav-collapse [item]="item" />
+        } @else if (item.type === 'item') {
+          <app-nav-item [item]="item" />
+        }
+      }
+    </ul>
+    <div class="pc-navbar-card steg-info-card rounded">
+      <div class="steg-info-icon">
+        <i class="ti ti-bolt"></i>
+      </div>
+      <h6 class="mb-1">STEG Stage</h6>
+      <p class="small mb-2">Gestion des stages</p>
+    </div>
+    <div class="version">
+      <label for="version" disabled class="pe-auto">v{{ currentApplicationVersion }}</label>
+    </div>
+  </div>
+</ng-scrollbar>

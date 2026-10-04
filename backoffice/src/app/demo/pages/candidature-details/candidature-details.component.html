@@ -1,0 +1,784 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <button class="btn btn-sm btn-link p-0 mb-2 text-decoration-none" (click)="goBack()">
+        <i class="ti ti-arrow-left me-1"></i> Retour aux candidatures
+      </button>
+      @if (details(); as d) {
+        <h4 class="mb-1">{{ d.prenom }} {{ d.nom }}</h4>
+        <p class="text-muted mb-0">{{ d.specialite || 'Candidature' }} · {{ d.universite || '—' }}</p>
+      }
+    </div>
+    @if (details(); as d) {
+      <span class="badge fs-6 py-2 px-3" [class]="getStatutBadge(d.statut)">{{ getStatutLabel(d.statut) }}</span>
+    }
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+  </div>
+} @else if (notFound()) {
+  <div class="card">
+    <div class="card-body text-center py-5">
+      <i class="ti ti-file-unknown text-muted fs-1"></i>
+      <h5 class="mt-3">Candidature introuvable</h5>
+      <p class="text-muted mb-0">Cette candidature n’existe plus ou a été supprimée.</p>
+    </div>
+  </div>
+} @else if (details(); as d) {
+  @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+  @if (success()) { <div class="alert alert-success">{{ success() }}</div> }
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><h6 class="mb-0">Candidat</h6></div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-mail me-2"></i>Email</span>
+              <span class="fw-medium">{{ d.email || '—' }}</span>
+            </li>
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-phone me-2"></i>Téléphone</span>
+              <span class="fw-medium">{{ d.telephone || '—' }}</span>
+            </li>
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-school me-2"></i>Université</span>
+              <span class="fw-medium">{{ d.universite || '—' }}</span>
+            </li>
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-book me-2"></i>Spécialité</span>
+              <span class="fw-medium">{{ d.specialite || '—' }}</span>
+            </li>
+            <li class="d-flex py-2">
+              <span class="text-muted w-50"><i class="ti ti-graduation-cap me-2"></i>Niveau</span>
+              <span class="fw-medium">{{ d.niveau || '—' }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><h6 class="mb-0">Offre de stage</h6></div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-briefcase me-2"></i>Offre</span>
+              <span class="fw-medium">{{ d.offre_titre || '—' }}</span>
+            </li>
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-building me-2"></i>Département</span>
+              <span class="fw-medium">{{ d.departement_nom || '—' }}</span>
+            </li>
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-calendar me-2"></i>Date de candidature</span>
+              <span class="fw-medium">{{ d.date_candidature | date:'dd/MM/yyyy' }}</span>
+            </li>
+            <li class="d-flex py-2">
+              <span class="text-muted w-50"><i class="ti ti-file me-2"></i>CV</span>
+              @if (d.cvUrl) {
+                <button class="btn btn-sm btn-outline-primary" (click)="downloadCv()">
+                  <i class="ti ti-file-download me-1"></i> Voir le CV
+                </button>
+              } @else {
+                <span class="text-muted">Aucun CV déposé</span>
+              }
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (canDecide()) {
+    <div class="card mt-3">
+      <div class="card-body d-flex flex-wrap gap-2 align-items-center justify-content-end">
+        <button class="btn btn-danger px-4" (click)="refuse()" [disabled]="busy()">
+          <i class="ti ti-circle-x me-1"></i> Refuser
+        </button>
+        <button class="btn btn-primary-custom px-4" (click)="preselectForInterview()" [disabled]="busy()">
+          @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          <i class="ti ti-robot me-1"></i> Accepter pour entretien IA
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (!readinessLoading()) {
+    <div class="card mt-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="ti ti-clipboard-check me-2"></i>État du dossier</h6>
+        <span class="badge" [class]="dossierVerdictBadgeClass()">{{ dossierVerdictLabel() }}</span>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Élément requis</th>
+              <th>État</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of dossierItems(); track item.label) {
+              <tr>
+                <td class="fw-medium">{{ item.label }}</td>
+                <td><span class="badge" [class]="item.badgeClass">{{ dossierStateLabel(item.state) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (!dossierReady()) {
+          <div class="alert alert-warning small mt-3 mb-0">
+            <i class="ti ti-alert-triangle me-1"></i>
+            <span>Le dossier n'est pas complet :</span>
+            <span class="fw-medium">{{ dossierPendingItems().join(', ') }}</span>.
+          </div>
+        }
+        @if (readinessError()) {
+          <div class="alert alert-danger small mt-3 mb-0">
+            <i class="ti ti-alert-triangle me-1"></i>
+            {{ readinessError() }}
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (onboardingDocuments().length) {
+    <div class="card mt-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="ti ti-files me-2"></i>Documents de stage</h6>
+        <span class="text-muted small">{{ onboardingProgressLabel() }}</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-striped mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Document</th>
+              <th>Déposé le</th>
+              <th>État</th>
+              <th>Motif du rejet</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (doc of onboardingDocuments(); track doc.type) {
+              <tr>
+                <td>
+                  <span class="fw-medium">{{ documentTypeLabel(doc.type) }}</span>
+                  @if (doc.from_application) {
+                    <span class="badge bg-light text-dark ms-1">déposé avec la candidature</span>
+                  }
+                </td>
+                <td>
+                  @if (doc.statut !== 'MANQUANT') {
+                    {{ doc.date_depot ? (doc.date_depot | date:'dd/MM/yyyy') : '—' }}
+                  } @else {
+                    <span class="text-muted">Non déposé</span>
+                  }
+                </td>
+                <td>
+                  <span class="badge" [class]="documentBadgeClass(doc)">{{ documentStatusLabel(doc) }}</span>
+                </td>
+                <td>
+                  @if (doc.rejected_reason) {
+                    <span class="text-danger small">{{ doc.rejected_reason }}</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td class="text-end text-nowrap">
+                  @if (doc.id) {
+                    <button type="button" class="btn btn-sm btn-outline-primary" (click)="downloadOnboardingDocument(doc)" [disabled]="busy()">
+                      <i class="ti ti-file-download me-1"></i> Télécharger
+                    </button>
+                  }
+                  @if (canReviewDocument(doc)) {
+                    <button type="button" class="btn btn-sm btn-success" (click)="openDocumentDecision(doc, 'VALID')" [disabled]="busy()">
+                      <i class="ti ti-check me-1"></i> Valider
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="openDocumentDecision(doc, 'REJECTED')" [disabled]="busy()">
+                      <i class="ti ti-x me-1"></i> Rejeter
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (d.ai_interview) {
+    <div class="card mt-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="ti ti-robot me-2"></i>Analyse de l'entretien IA</h6>
+        <span class="badge" [class]="aiStatusBadge(d.ai_interview)">{{ aiStatusLabel(d.ai_interview) }}</span>
+      </div>
+      <div class="card-body">
+        @if (d.ai_interview.evaluation_status === 'EVALUEE' && d.ai_interview.evaluation?.score_global != null) {
+          <div class="row g-3 align-items-center">
+            <div class="col-md-4 text-center border-end">
+              <div class="display-4 fw-bold text-primary">{{ aiScorePercent(d.ai_interview) }}</div>
+              <div class="text-muted small">de réussite</div>
+            </div>
+            <div class="col-md-8">
+              <ul class="list-unstyled mb-0 small">
+                <li class="mb-2">
+                  <i class="ti ti-check me-2 text-success"></i>
+                  Recommandation :
+                  <span class="fw-medium">{{ aiRecommendation(d.ai_interview) }}</span>
+                </li>
+                <li class="mb-0">
+                  <i class="ti ti-calendar-time me-2 text-muted"></i>
+                  Terminé le :
+                  <span class="fw-medium">{{ d.ai_interview.completed_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        } @else if (d.ai_interview.evaluation_status === 'INDISPONIBLE') {
+          <p class="text-muted mb-0">
+            <i class="ti ti-alert-triangle me-2 text-warning"></i>
+            L'évaluation IA n'a pas pu être générée (service indisponible au moment de l'entretien).
+          </p>
+        } @else {
+          <p class="text-muted mb-0">
+            <i class="ti ti-hourglass me-2"></i>
+            Entretien en attente de fin ou de démarrage.
+          </p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (canSchedule()) {
+    <div class="card mt-3">
+      <div class="card-body d-flex flex-wrap gap-2 align-items-center justify-content-end">
+        <button class="btn btn-outline-primary px-4" (click)="scheduleExpress()" [disabled]="busy()">
+          <i class="ti ti-bolt me-1"></i> Planifier et envoyer (rapide)
+        </button>
+        <button class="btn btn-primary-custom px-4" (click)="openSchedule()" [disabled]="busy()">
+          <i class="ti ti-calendar-plus me-1"></i> Planifier l'entretien humain
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (hasActiveInterview()) {
+    <div class="card mt-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="ti ti-video me-2"></i>Entretien humain</h6>
+        <span class="badge bg-primary">Planifié</span>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <ul class="list-unstyled mb-0">
+              <li class="d-flex py-2 border-bottom">
+                <span class="text-muted w-50"><i class="ti ti-calendar me-2"></i>Date</span>
+                <span class="fw-medium">{{ details()?.human_interview?.date | date:'dd/MM/yyyy' }}</span>
+              </li>
+              <li class="d-flex py-2 border-bottom">
+                <span class="text-muted w-50"><i class="ti ti-clock me-2"></i>Heure</span>
+                <span class="fw-medium">{{ formatTime(details()?.human_interview?.heure) }}</span>
+              </li>
+              <li class="d-flex py-2 border-bottom">
+                <span class="text-muted w-50"><i class="ti ti-hourglass me-2"></i>Durée</span>
+                <span class="fw-medium">{{ details()?.human_interview?.duree }} minutes</span>
+              </li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <ul class="list-unstyled mb-0">
+              <li class="d-flex py-2 border-bottom">
+                <span class="text-muted w-50"><i class="ti ti-user me-2"></i>Intervieweur</span>
+                <span class="fw-medium">{{ details()?.human_interview?.interviewer }}</span>
+              </li>
+              <li class="d-flex py-2 border-bottom">
+                <span class="text-muted w-50"><i class="ti ti-mail me-2"></i>Email</span>
+                <span class="fw-medium">{{ details()?.human_interview?.interviewer_email }}</span>
+              </li>
+              <li class="d-flex py-2">
+                <span class="text-muted w-50"><i class="ti ti-video me-2"></i>Meeting</span>
+                <a class="fw-medium" [href]="details()?.human_interview?.lien_visio" target="_blank" rel="noopener">Rejoindre la réunion</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer d-flex gap-2 justify-content-end">
+        @if (canCompleteInterview()) {
+          <button class="btn btn-sm btn-success" (click)="openComplete()" [disabled]="busy()">
+            <i class="ti ti-check me-1"></i> Marquer l'entretien comme terminé
+          </button>
+        }
+        <button class="btn btn-sm btn-outline-primary" (click)="openEdit()" [disabled]="busy()">
+          <i class="ti ti-edit me-1"></i> Modifier
+        </button>
+        <button class="btn btn-sm btn-outline-danger" (click)="cancelInterview()" [disabled]="busy()">
+          <i class="ti ti-calendar-x me-1"></i> Annuler l'entretien
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (isInterviewCompleted()) {
+    <div class="card mt-3 border-success">
+      <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 text-success"><i class="ti ti-circle-check me-2"></i>Human interview completed</h6>
+        <span class="badge bg-success">Complété</span>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <ul class="list-unstyled mb-0">
+              <li class="d-flex py-2 border-bottom">
+                <span class="text-muted w-50"><i class="ti ti-calendar me-2"></i>Date</span>
+                <span class="fw-medium">{{ details()?.human_interview?.date | date:'dd/MM/yyyy' }}</span>
+              </li>
+              <li class="d-flex py-2 border-bottom">
+                <span class="text-muted w-50"><i class="ti ti-clock me-2"></i>Heure</span>
+                <span class="fw-medium">{{ formatTime(details()?.human_interview?.heure) }}</span>
+              </li>
+              <li class="d-flex py-2 border-bottom">
+                <span class="text-muted w-50"><i class="ti ti-user me-2"></i>Intervieweur</span>
+                <span class="fw-medium">{{ details()?.human_interview?.interviewer }}</span>
+              </li>
+              <li class="d-flex py-2">
+                <span class="text-muted w-50"><i class="ti ti-circle-check me-2"></i>Complété le</span>
+                <span class="fw-medium">{{ details()?.human_interview?.completed_at | date:'dd/MM/yyyy HH:mm' }}</span>
+              </li>
+            </ul>
+          </div>
+          <div class="col-md-6 d-flex flex-column justify-content-center">
+            @if (hasDecision()) {
+              <p class="text-muted mb-3">Décision enregistrée le {{ details()?.decided_at | date:'dd/MM/yyyy HH:mm' }}.</p>
+              <div class="d-flex gap-2">
+                <span class="badge fs-6 py-2 px-3" [class]="details()?.decision === 'ACCEPTED' ? 'badge bg-success' : 'badge bg-danger'">
+                  <i class="ti me-1" [class]="details()?.decision === 'ACCEPTED' ? 'ti-user-check' : 'ti-user-x'"></i>
+                  {{ decisionLabel(details()?.decision) }}
+                </span>
+              </div>
+            } @else {
+              <p class="text-muted mb-3">L'entretien a été réalisé. Prenez la décision finale :</p>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary-custom px-4" (click)="openDecision('ACCEPTED')" [disabled]="!canDecideHumanInterview() || busy()">
+                  <i class="ti ti-user-check me-1"></i> Accepter le candidat
+                </button>
+                <button type="button" class="btn btn-danger px-4" (click)="openDecision('REJECTED')" [disabled]="!canDecideHumanInterview() || busy()">
+                  <i class="ti ti-user-x me-1"></i> Refuser le candidat
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (d.statut === 'HUMAN_INTERVIEW_ACCEPTED') {
+    <div class="card mt-3 border-success">
+      <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 text-success"><i class="ti ti-briefcase me-2"></i>Préparation du stage</h6>
+        @if (isStagePeriodValidated()) {
+          <span class="badge bg-primary">Period validated</span>
+        } @else if (hasStagePreferences()) {
+          <span class="badge bg-success">Période renseignée par le candidat</span>
+        } @else {
+          <span class="badge bg-warning text-dark">En attente de la période choisie</span>
+        }
+      </div>
+      <div class="card-body">
+        @if (hasStagePreferences()) {
+          <div class="row g-3">
+            <div class="col-md-6">
+              <ul class="list-unstyled mb-0">
+                <li class="d-flex py-2 border-bottom">
+                  <span class="text-muted w-50"><i class="ti ti-calendar me-2"></i>Date de début du stage</span>
+                  <span class="fw-medium">{{ details()?.internship_start_date | date:'dd/MM/yyyy' }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <ul class="list-unstyled mb-0">
+                <li class="d-flex py-2 border-bottom">
+                  <span class="text-muted w-50"><i class="ti ti-clock me-2"></i>Durée du stage</span>
+                  <span class="fw-medium">{{ formatDuration(details()?.internship_duration_months) }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          @if (isStagePeriodValidated()) {
+            <div class="row g-3 mt-1">
+              <div class="col-md-6">
+                <ul class="list-unstyled mb-0">
+                  <li class="d-flex py-2 border-bottom">
+                    <span class="text-muted w-50"><i class="ti ti-user me-2"></i>Validé par</span>
+                    <span class="fw-medium">{{ details()?.validated_by_name || details()?.internship_period_validated_by }}</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <ul class="list-unstyled mb-0">
+                  <li class="d-flex py-2 border-bottom">
+                    <span class="text-muted w-50"><i class="ti ti-calendar-time me-2"></i>Date de validation</span>
+                    <span class="fw-medium">{{ details()?.internship_period_validated_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          }
+        } @else {
+          <p class="text-muted mb-0">
+            Date de début et durée non renseignées. Le candidat a été accepté après son
+            entretien humain et doit encore indiquer sa période de stage souhaitée.
+          </p>
+        }
+
+        @if (canValidateStagePeriod()) {
+          <div class="mt-3 d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-success" [disabled]="busy()" (click)="validateStagePeriod()">
+              <i class="ti ti-check me-1"></i>Valider la période
+            </button>
+            <button type="button" class="btn btn-outline-warning" [disabled]="busy()" (click)="requestStagePeriodModification()">
+              <i class="ti ti-edit me-1"></i>Demander une modification
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (isStagePeriodValidated()) {
+      <div class="card mt-3">
+        <div class="card-header"><h6 class="mb-0"><i class="ti ti-device-mobile me-2"></i>Accès application mobile</h6></div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-info-circle me-2"></i>État</span>
+              <span class="fw-medium"><span class="badge" [class]="mobileAccessBadgeClass()">{{ mobileAccessStateLabel() }}</span></span>
+            </li>
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-calendar me-2"></i>Date de début du stage</span>
+              <span class="fw-medium">{{ details()?.internship_start_date | date:'dd/MM/yyyy' }}</span>
+            </li>
+            <li class="d-flex py-2 border-bottom">
+              <span class="text-muted w-50"><i class="ti ti-calendar-time me-2"></i>Email prévu</span>
+              <span class="fw-medium">{{ mobileAccessPlannedDate() }}</span>
+            </li>
+            @if (mobileAccessSentAt(); as sentAt) {
+              <li class="d-flex py-2">
+                <span class="text-muted w-50"><i class="ti ti-mail me-2"></i>Email envoyé le</span>
+                <span class="fw-medium">{{ sentAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+
+    @if (canConvertToTrainee()) {
+      <div class="card mt-3 border-success">
+        <div class="card-header bg-success bg-opacity-10">
+          <h6 class="mb-0 text-success"><i class="ti ti-user-plus me-2"></i>Création du stagiaire</h6>
+        </div>
+        <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <p class="text-muted mb-0">
+            Le dossier est complet et la période de stage est validée. La conversion crée le profil
+            stagiaire, le stage et l'affectation.
+          </p>
+          <button type="button" class="btn btn-success px-4" [disabled]="busy()" (click)="openConvertModal()">
+            <i class="ti ti-user-plus me-1"></i> Créer le stagiaire
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+  @if (stageCreated()) {
+    <div class="card mt-3 border-success">
+      <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 text-success"><i class="ti ti-user-check me-2"></i>Stagiaire créé</h6>
+        <span class="badge bg-primary">Stagiaire créé</span>
+      </div>
+      <div class="card-body">
+        @if (details()?.stage_created; as sc) {
+          <div class="row g-3">
+            <div class="col-md-6">
+              <ul class="list-unstyled mb-0">
+                <li class="d-flex py-2 border-bottom">
+                  <span class="text-muted w-50"><i class="ti ti-id me-2"></i>Stagiaire</span>
+                  <span class="fw-medium">{{ sc.stagiaire_id }}</span>
+                </li>
+                <li class="d-flex py-2 border-bottom">
+                  <span class="text-muted w-50"><i class="ti ti-briefcase me-2"></i>Offre</span>
+                  <span class="fw-medium">{{ sc.offre_titre }}</span>
+                </li>
+                <li class="d-flex py-2">
+                  <span class="text-muted w-50"><i class="ti ti-building me-2"></i>Département</span>
+                  <span class="fw-medium">{{ sc.departement_nom }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <ul class="list-unstyled mb-0">
+                <li class="d-flex py-2 border-bottom">
+                  <span class="text-muted w-50"><i class="ti ti-calendar me-2"></i>Début du stage</span>
+                  <span class="fw-medium">{{ sc.date_debut | date:'dd/MM/yyyy' }}</span>
+                </li>
+                <li class="d-flex py-2 border-bottom">
+                  <span class="text-muted w-50"><i class="ti ti-calendar-time me-2"></i>Fin du stage</span>
+                  <span class="fw-medium">{{ sc.date_fin | date:'dd/MM/yyyy' }}</span>
+                </li>
+                <li class="d-flex py-2">
+                  <span class="text-muted w-50"><i class="ti ti-user me-2"></i>Encadrant</span>
+                  <span class="fw-medium">{{ sc.encadrant ? (sc.encadrant.prenom + ' ' + sc.encadrant.nom) : '—' }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        } @else {
+          <p class="text-muted mb-0">La candidature a été convertie en stagiaire.</p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (details()?.decision_history?.length) {
+    <div class="card mt-3">
+      <div class="card-header"><h6 class="mb-0"><i class="ti ti-history me-2"></i>Historique des décisions</h6></div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-striped mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Décision</th>
+              <th>De</th>
+              <th>Vers</th>
+              <th>Le</th>
+              <th>Par</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of details()?.decision_history; track entry.id) {
+              <tr>
+                <td>
+                  <span class="badge" [class]="decisionBadgeClass(entry.decision)">
+                    {{ decisionLabel(entry.decision) }}
+                  </span>
+                </td>
+                <td>{{ getStatutLabel(entry.previous_status) }}</td>
+                <td>{{ getStatutLabel(entry.new_status) }}</td>
+                <td>{{ entry.decided_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ entry.decided_by_name || entry.decided_by }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+}
+
+@if (showScheduleModal()) {
+  <div class="modal-backdrop-custom" (click)="closeScheduleModal()"></div>
+  <div class="modal-custom">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editMode() ? 'Modifier l’entretien humain' : 'Planifier l’entretien humain' }}</h5>
+          <button type="button" class="btn-close" (click)="closeScheduleModal()"></button>
+        </div>
+        <div class="modal-body">
+          @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Date de l’entretien *</label>
+              <input type="date" class="form-control" [(ngModel)]="scheduleForm.date" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Heure de début *</label>
+              <input type="time" class="form-control" [(ngModel)]="scheduleForm.heure" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Durée (minutes) *</label>
+              <input type="number" class="form-control" min="1" max="600" [(ngModel)]="scheduleForm.duree" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nom de l’intervieweur *</label>
+              <input type="text" class="form-control" [(ngModel)]="scheduleForm.interviewer" placeholder="Ex : Salma Bouazizi" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email de l’intervieweur *</label>
+              <input type="email" class="form-control" [(ngModel)]="scheduleForm.interviewer_email" placeholder="nom@steg.tn" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Lien de réunion (visio) *</label>
+              <input type="url" class="form-control" [(ngModel)]="scheduleForm.lien_visio" placeholder="https://teams.microsoft.com/..." />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeScheduleModal()">Annuler</button>
+          <button type="button" class="btn btn-primary-custom" (click)="submitSchedule()" [disabled]="busy()">
+            @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            {{ editMode() ? 'Enregistrer' : 'Planifier' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCancelModal()) {
+  <div class="modal-backdrop-custom" (click)="keepInterview()"></div>
+  <div class="modal-custom">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="ti ti-alert-triangle me-2 text-danger"></i>Annuler l’entretien humain</h5>
+          <button type="button" class="btn-close" (click)="keepInterview()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">
+            Voulez-vous vraiment annuler cet entretien ?
+            La candidature repassera à « entretien IA réussi » et le candidat
+            sera informé de l’annulation.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="keepInterview()">Garder l’entretien</button>
+          <button type="button" class="btn btn-danger" (click)="confirmCancelInterview()" [disabled]="busy()">
+            @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Annuler l’entretien
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCompleteModal()) {
+  <div class="modal-backdrop-custom" (click)="keepComplete()"></div>
+  <div class="modal-custom">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="ti ti-circle-check me-2 text-success"></i>Terminer l’entretien humain</h5>
+          <button type="button" class="btn-close" (click)="keepComplete()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">Have you completed this human interview?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="keepComplete()">Non</button>
+          <button type="button" class="btn btn-success" (click)="confirmCompleteInterview()" [disabled]="busy()">
+            @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Oui, entretien terminé
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showDecisionModal()) {
+  <div class="modal-backdrop-custom" (click)="keepDecision()"></div>
+  <div class="modal-custom">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="ti me-2" [class]="pendingDecision() === 'ACCEPTED' ? 'ti-user-check text-success' : 'ti-user-x text-danger'"></i>
+            Décision finale — {{ decisionLabel(pendingDecision() ?? '') }}
+          </h5>
+          <button type="button" class="btn-close" (click)="keepDecision()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">
+            @if (pendingDecision() === 'ACCEPTED') {
+              Accepter définitivement ce candidat après son entretien humain ? Cette action est définitive.
+            } @else {
+              Refuser ce candidat après son entretien humain ? Le candidat sera informé par email.
+            }
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="keepDecision()">Annuler</button>
+          <button type="button" class="btn" [class]="pendingDecision() === 'ACCEPTED' ? 'btn-primary-custom' : 'btn-danger'" (click)="confirmHumanDecision()" [disabled]="busy()">
+            @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Confirmer {{ decisionLabel(pendingDecision() ?? '').toLowerCase() }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showDocumentModal()) {
+  <div class="modal-backdrop-custom" (click)="keepDocumentDecision()"></div>
+  <div class="modal-custom">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="ti me-2" [class]="documentDecision() === 'VALID' ? 'ti-circle-check text-success' : 'ti-x text-danger'"></i>
+            {{ documentDecision() === 'VALID' ? 'Valider' : 'Rejeter' }} — {{ documentTypeLabel(pendingDocument()?.type) }}
+          </h5>
+          <button type="button" class="btn-close" (click)="keepDocumentDecision()"></button>
+        </div>
+        <div class="modal-body">
+          @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+          @if (documentDecision() === 'VALID') {
+            <p class="mb-0">Valider ce document du dossier ? Le candidat sera informé de la validation.</p>
+          } @else {
+            <p class="mb-0">Rejeter ce document du dossier ? Le candidat sera invité à déposer une nouvelle version.</p>
+            <label class="form-label mt-3">Motif du rejet *</label>
+            <textarea class="form-control" rows="3" maxlength="500" [(ngModel)]="documentRejectedReason" placeholder="Ex : document illisible, informations manquantes…"></textarea>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="keepDocumentDecision()">Annuler</button>
+          <button type="button" class="btn" [class]="documentDecision() === 'VALID' ? 'btn-success' : 'btn-danger'" (click)="confirmDocumentDecision()" [disabled]="busy()">
+            @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Confirmer {{ documentDecision() === 'VALID' ? 'la validation' : 'le rejet' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showConvertModal()) {
+  <div class="modal-backdrop-custom" (click)="keepConvert()"></div>
+  <div class="modal-custom">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="ti ti-user-plus me-2 text-success"></i>Créer le stagiaire</h5>
+          <button type="button" class="btn-close" (click)="keepConvert()"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">
+            Confirmer la création du stagiaire pour {{ details()?.prenom }} {{ details()?.nom }} ?
+            Le profil stagiaire, le stage et l'affectation seront créés, et la candidature
+            passera en « Stagiaire créé ». Cette action est définitive.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="keepConvert()">Annuler</button>
+          <button type="button" class="btn btn-success" (click)="confirmConvert()" [disabled]="busy()">
+            @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Confirmer la création
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

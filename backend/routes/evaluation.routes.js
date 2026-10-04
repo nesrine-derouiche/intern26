@@ -1,0 +1,14 @@
+const express = require('express');
+const router = express.Router();
+const c = require('../controllers/evaluation.controller');
+const { authenticateToken: auth } = require('../middlewares/auth.middleware');
+const { requireRole: role } = require('../middlewares/role.middleware');
+const { withScope, authorizeResource } = require('../middlewares/authorization.middleware');
+const { enforceOnboardingAccess } = require('../middlewares/onboarding-access.middleware');
+const { createEvaluationValidation } = require('../validators/evaluation.validator');
+const { validate } = require('../validators');
+router.use(auth, withScope, enforceOnboardingAccess);
+router.get('/', c.getAll);
+router.post('/', role('ENCADRANT'), createEvaluationValidation, validate, c.create);
+router.put('/:id', role('ENCADRANT', 'ADMIN'), authorizeResource('evaluation'), c.update);
+router.delete('/:id', role('ENCADRANT', 'ADMIN'), authorizeResource('evaluation'), c.delete);module.exports = router;

@@ -1,0 +1,102 @@
+// Angular import
+import { Component, OnInit, output, inject } from '@angular/core';
+import { Location } from '@angular/common';
+import { RouterModule } from '@angular/router';
+
+//theme version
+import { environment } from 'src/environments/environment';
+
+// project import
+import { NavigationItem, NavigationItems } from '../navigation';
+import { AuthService } from 'src/app/core/data/auth.service';
+
+import { NavCollapseComponent } from './nav-collapse/nav-collapse.component';
+import { NavGroupComponent } from './nav-group/nav-group.component';
+import { NavItemComponent } from './nav-item/nav-item.component';
+
+// NgScrollbarModule
+import { SHARED_IMPORTS } from 'src/app/theme/shared/shared.module';
+
+@Component({
+  selector: 'app-nav-content',
+  imports: [...SHARED_IMPORTS, RouterModule, NavCollapseComponent, NavGroupComponent, NavItemComponent],
+  templateUrl: './nav-content.component.html',
+  styleUrl: './nav-content.component.scss'
+})
+export class NavContentComponent implements OnInit {
+  private location = inject(Location);
+  private authService = inject(AuthService);
+
+  // public props
+  readonly NavCollapsedMob = output<void>();
+  readonly SubmenuCollapse = output<void>();
+
+  // version
+  title = 'Demo application for version numbering';
+  currentApplicationVersion = environment.appVersion;
+
+  navigations!: NavigationItem[];
+  windowWidth: number;
+
+  // Constructor
+  constructor() {
+    this.windowWidth = window.innerWidth;
+    this.navigations = this.getFilteredNavigation();
+  }
+
+  // Filter navigation items based on current user role
+  private getFilteredNavigation(): NavigationItem[] {
+    const userRole = this.authService.currentUser()?.role;
+
+    return NavigationItems.map(group => ({
+      ...group,
+      children: (group.children || []).filter(item => {
+        // If no roles defined, show to everyone
+        if (!item.roles || item.roles.length === 0) return true;
+        // If user has no role yet, hide
+        if (!userRole) return false;
+        return item.roles.includes(userRole);
+      })
+    }));
+  }
+
+  // Life cycle events
+  ngOnInit() {
+    // Re-filter in case user loads after token refresh
+    this.navigations = this.getFilteredNavigation();
+
+    if (this.windowWidth < 1025) {
+      setTimeout(() => {
+        (document.querySelector('.coded-navbar') as HTMLDivElement).classList.add('menupos-static');
+      }, 500);
+    }
+  }
+
+  fireOutClick() {
+    let current_url = this.location.path();
+    // eslint-disable-next-line
+    // @ts-ignore
+    if (this.location['_baseHref']) {
+      // eslint-disable-next-line
+      // @ts-ignore
+      current_url = this.location['_baseHref'] + this.location.path();
+    }
+    const link = "a.nav-link[ href='" + current_url + "' ]";
+    const ele = document.querySelector(link);
+    if (ele !== null && ele !== undefined) {
+      const parent = ele.parentElement;
+      const up_parent = parent?.parentElement?.parentElement;
+      const last_parent = up_parent?.parentElement;
+      if (parent?.classList.contains('coded-hasmenu')) {
+        parent.classList.add('coded-trigger');
+        parent.classList.add('active');
+      } else if (up_parent?.classList.contains('coded-hasmenu')) {
+        up_parent.classList.add('coded-trigger');
+        up_parent.classList.add('active');
+      } else if (last_parent?.classList.contains('coded-hasmenu')) {
+        last_parent.classList.add('coded-trigger');
+        last_parent.classList.add('active');
+      }
+    }
+  }
+}

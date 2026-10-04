@@ -1,0 +1,32 @@
+# System and editor files
+.DS_Store
+.vscode/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# JavaScript dependencies and generated output
+node_modules/
+dist/
+coverage/
+.angular/
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+venv/
+.venv/
+
+# Flutter and build output
+.dart_tool/
+build/
+
+# Local runtime files
+*.log
+backend/uploads/*
+!backend/uploads/.gitkeep

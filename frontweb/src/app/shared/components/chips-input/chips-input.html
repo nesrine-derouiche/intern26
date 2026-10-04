@@ -1,0 +1,23 @@
+<div class="chips-input" (click)="input.focus()">
+  @for (item of value(); track item) {
+    <span class="chip">
+      {{ item }}
+      <button
+        type="button"
+        class="chip__remove"
+        aria-label="Retirer {{ item }}"
+        (click)="remove(item)"
+      >
+        ×
+      </button>
+    </span>
+  }
+  <input
+    #input
+    [value]="draft()"
+    (input)="draft.set(($any($event.target)).value)"
+    (keydown)="onKeydown($event)"
+    (blur)="add()"
+    [placeholder]="placeholder()"
+  />
+</div>

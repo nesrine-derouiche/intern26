@@ -1,0 +1,30 @@
+<app-landing-header />
+
+<main class="auth-shell">
+  <div class="auth-card">
+    <header class="auth-card__head">
+      <span class="auth-card__icon">
+        @if (status() === 'loading') {
+          <app-icon name="loader" />
+        } @else if (status() === 'success') {
+          <app-icon name="check-circle" />
+        } @else {
+          <app-icon name="info" />
+        }
+      </span>
+      <h1 class="auth-card__title">Vérification de l'email</h1>
+      <p class="auth-card__subtitle">{{ message() }}</p>
+    </header>
+
+    @if (status() === 'success') {
+      <button class="btn btn--primary btn--block" (click)="goToLogin()">
+        <app-icon name="arrow-right" />
+        Se connecter
+      </button>
+    } @else {
+      <a class="btn btn--outline btn--block" routerLink="/connexion">Retour à la connexion</a>
+    }
+  </div>
+</main>
+
+<app-landing-footer />

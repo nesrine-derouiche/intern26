@@ -1,0 +1,14 @@
+const express = require('express');
+const router = express.Router();
+const c = require('../controllers/reunion.controller');
+const { authenticateToken: auth } = require('../middlewares/auth.middleware');
+const { requireRole: role } = require('../middlewares/role.middleware');
+const { withScope, authorizeResource } = require('../middlewares/authorization.middleware');
+const { enforceOnboardingAccess } = require('../middlewares/onboarding-access.middleware');
+const { createMeetingValidation } = require('../validators/meeting.validator');
+const { validate } = require('../validators');
+router.use(auth, withScope, enforceOnboardingAccess);
+router.get('/', c.getAll);
+router.post('/', role('ENCADRANT', 'ADMIN', 'RH'), createMeetingValidation, validate, c.create);
+router.delete('/:id', role('ENCADRANT', 'ADMIN'), authorizeResource('reunion'), c.delete);
+module.exports = router;

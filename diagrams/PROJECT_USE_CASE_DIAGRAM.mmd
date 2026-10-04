@@ -1,0 +1,186 @@
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% DIAGRAMME DE CAS D'UTILISATION — STEG Internship Platform
+%% Couvre : Backend, Backoffice (Angular), Frontweb (Angular), Mobile (Flutter)
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam rectangle {
+    BackgroundColor<<ext>> #FEFECE
+    BorderColor<<ext>> #A80036
+    BackgroundColor<<ui>> #E3F2FD
+    BorderColor<<ui>> #1565C0
+}
+
+title Diagramme de Cas d'Utilisation\nPlateforme STEG — Gestion des Stages
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% ACTEURS
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor "Candidat"                  as CAND
+actor "Stagiaire"                 as STG
+actor "Encadrant"                 as ENC
+actor "Chef Département"          as CHEF
+actor "RH"                        as RH
+actor "Administrateur"            as ADM
+
+rectangle "Frontweb — Portail Public" <<ui>> {
+    -- Candidat --
+    usecase "Consulter les offres de stage"          as UC_OFFRE_LIST
+    usecase "Déposer une candidature"                as UC_CAND_DEPOSER
+    usecase "Joindre CV / documents"                 as UC_CAND_DOCS
+    usecase "Suivre l'état de candidature"           as UC_CAND_SUIVI
+    usecase "Passer l'entretien IA (texte)"          as UC_AI_TEXT
+    usecase "Passer l'entretien IA vocal"            as UC_AI_VOCAL
+    usecase "Recevoir email credentials mobile"      as UC_CAND_EMAIL
+    usecase "Soumettre préférences de stage"         as UC_CAND_PREFS
+
+    -- Stagiaire (frontweb) --
+    usecase "Consulter son tableau de bord"          as UC_STG_DASH_FW
+    usecase "Consulter ses tâches encadrant"         as UC_STG_TACHES_FW
+    usecase "Soumettre journal hebdomadaire"         as UC_STG_JOURNAL_FW
+    usecase "Consulter ses rapports"                 as UC_STG_RAPPORTS_FW
+    usecase "Consulter ses évaluations"              as UC_STG_EVAL_FW
+    usecase "Gérer ses tâches personnelles (Trello)" as UC_STG_KANBAN_FW
+}
+
+rectangle "Backoffice — Administration" <<ui>> {
+    -- Administrateur --
+    usecase "Gérer les utilisateurs"                 as UC_ADM_USERS
+    usecase "Gérer les départements"                 as UC_ADM_DEPT
+    usecase "Gérer les permissions RBAC"             as UC_ADM_PERM
+    usecase "Consulter les logs d'audit"             as UC_ADM_AUDIT
+
+    -- RH --
+    usecase "Consulter les candidatures"             as UC_RH_CAND_LIST
+    usecase "Vérifier les documents du dossier"      as UC_RH_DOC_VERIF
+    usecase "Accepter / Refuser une candidature"     as UC_RH_DECISION
+    usecase "Planifier entretien humain"             as UC_RH_PLAN_HUMAIN
+    usecase "Valider la période de stage"            as UC_RH_PERIODE
+    usecase "Consulter les statistiques"             as UC_RH_STATS
+    usecase "Voir l'historique des décisions"        as UC_RH_AUDIT
+
+    -- Chef de Département --
+    usecase "Créer / modifier une offre de stage"    as UC_CHEF_OFFRE
+    usecase "Assigner un encadrant à une offre"      as UC_CHEF_ASSIGN_ENC
+    usecase "Gérer les stages de son département"    as UC_CHEF_STAGES
+    usecase "Consulter les évaluations"              as UC_CHEF_EVAL
+
+    -- Encadrant --
+    usecase "Créer des tâches pour le stagiaire"     as UC_ENC_TACHE_CREATE
+    usecase "Suivre l'avancement des tâches"         as UC_ENC_TACHE_SUIVI
+    usecase "Évaluer le stagiaire"                   as UC_ENC_EVALUER
+    usecase "Planifier des réunions"                 as UC_ENC_REUNION
+    usecase "Donner un avis sur journal"             as UC_ENC_JOURNAL
+    usecase "Recevoir entretien express"             as UC_ENC_EXPRESS
+    usecase "Consulter son planning"                 as UC_ENC_PLANNING
+}
+
+rectangle "Application Mobile — Flutter" <<ui>> {
+    -- Stagiaire (mobile) --
+    usecase "Recevoir notifications push"            as UC_STG_PUSH
+    usecase "Consulter dashboard mobile"             as UC_STG_DASH_MOB
+    usecase "Consulter tâches officielles (Kanban)"  as UC_STG_TACHES_MOB
+    usecase "Consulter tâches personnelles (Trello)" as UC_STG_KANBAN_MOB
+    usecase "Déplacer tâche par Drag & Drop"         as UC_STG_DRAG_MOB
+    usecase "Créer tâche depuis mobile"              as UC_STG_KANBAN_ADD_MOB
+    usecase "Soumettre journal depuis mobile"        as UC_STG_JOURNAL_MOB
+    usecase "Consulter documents"                    as UC_STG_DOCS_MOB
+    usecase "Consulter réunions"                     as UC_STG_REUNION_MOB
+    usecase "Consulter évaluations"                  as UC_STG_EVAL_MOB
+}
+
+rectangle "Service IA — Python/FastAPI" <<ext>> {
+    usecase "Analyser un CV (CV parsing)"            as UC_AI_CV
+    usecase "Vérifier un document (scan PDF)"        as UC_AI_DOC_VERIFY
+    usecase "Générer des questions d'entretien"      as UC_AI_QUESTIONS
+    usecase "Évaluer les réponses (scoring)"         as UC_AI_SCORING
+    usecase "Détecter fraude / intégrité"            as UC_AI_INTEGRITY
+    usecase "Synthèse vocale (TTS)"                  as UC_AI_TTS
+    usecase "Reconnaissance vocale (STT)"            as UC_AI_STT
+}
+
+rectangle "Email / SMTP" <<ext>> {
+    usecase "Envoyer email confirmation"             as UC_EMAIL_CONFIRM
+    usecase "Envoyer email credentials mobile"       as UC_EMAIL_CREDS
+    usecase "Envoyer email entretien IA"             as UC_EMAIL_AI
+    usecase "Envoyer email entretien humain"         as UC_EMAIL_HUMAIN
+}
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% RELATIONS ACTEURS → USE CASES
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+CAND --> UC_OFFRE_LIST
+CAND --> UC_CAND_DEPOSER
+CAND --> UC_CAND_DOCS
+CAND --> UC_CAND_SUIVI
+CAND --> UC_AI_TEXT
+CAND --> UC_AI_VOCAL
+CAND --> UC_CAND_PREFS
+
+STG --> UC_STG_DASH_FW
+STG --> UC_STG_TACHES_FW
+STG --> UC_STG_JOURNAL_FW
+STG --> UC_STG_RAPPORTS_FW
+STG --> UC_STG_EVAL_FW
+STG --> UC_STG_KANBAN_FW
+STG --> UC_STG_PUSH
+STG --> UC_STG_DASH_MOB
+STG --> UC_STG_TACHES_MOB
+STG --> UC_STG_KANBAN_MOB
+STG --> UC_STG_DRAG_MOB
+STG --> UC_STG_KANBAN_ADD_MOB
+STG --> UC_STG_JOURNAL_MOB
+STG --> UC_STG_DOCS_MOB
+STG --> UC_STG_REUNION_MOB
+STG --> UC_STG_EVAL_MOB
+
+ENC --> UC_ENC_TACHE_CREATE
+ENC --> UC_ENC_TACHE_SUIVI
+ENC --> UC_ENC_EVALUER
+ENC --> UC_ENC_REUNION
+ENC --> UC_ENC_JOURNAL
+ENC --> UC_ENC_EXPRESS
+ENC --> UC_ENC_PLANNING
+
+CHEF --> UC_CHEF_OFFRE
+CHEF --> UC_CHEF_ASSIGN_ENC
+CHEF --> UC_CHEF_STAGES
+CHEF --> UC_CHEF_EVAL
+
+RH --> UC_RH_CAND_LIST
+RH --> UC_RH_DOC_VERIF
+RH --> UC_RH_DECISION
+RH --> UC_RH_PLAN_HUMAIN
+RH --> UC_RH_PERIODE
+RH --> UC_RH_STATS
+RH --> UC_RH_AUDIT
+
+ADM --> UC_ADM_USERS
+ADM --> UC_ADM_DEPT
+ADM --> UC_ADM_PERM
+ADM --> UC_ADM_AUDIT
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% RELATIONS ENTRE USE CASES (include / extend)
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+UC_CAND_DEPOSER ..> UC_EMAIL_CONFIRM      : <<include>>
+UC_CAND_DEPOSER ..> UC_AI_CV              : <<include>>
+UC_AI_TEXT ..> UC_AI_QUESTIONS            : <<include>>
+UC_AI_TEXT ..> UC_AI_SCORING              : <<include>>
+UC_AI_VOCAL ..> UC_AI_TTS                : <<include>>
+UC_AI_VOCAL ..> UC_AI_STT                : <<include>>
+UC_AI_VOCAL ..> UC_AI_QUESTIONS          : <<include>>
+UC_AI_VOCAL ..> UC_AI_SCORING            : <<include>>
+UC_RH_DECISION ..> UC_EMAIL_CREDS         : <<extend>>
+UC_RH_PLAN_HUMAIN ..> UC_EMAIL_HUMAIN     : <<include>>
+UC_RH_DOC_VERIF ..> UC_AI_DOC_VERIFY     : <<include>>
+UC_RH_PERIODE ..> UC_EMAIL_CREDS          : <<include>>
+UC_ENC_EXPRESS ..> UC_EMAIL_HUMAIN        : <<include>>
+UC_STG_KANBAN_MOB ..> UC_STG_DRAG_MOB    : <<include>>
+UC_CHEF_OFFRE ..> UC_EMAIL_CONFIRM        : <<extend>>
+UC_STG_KANBAN_FW ..> UC_STG_KANBAN_MOB    : <<include>>

@@ -1,0 +1,11 @@
+<nav class="">
+  <div class="navbar-wrapper">
+    <div class="m-header">
+      <a [routerLink]="['/default/']" class="b-brand">
+        <img src="assets/images/logo.svg" alt="STEG" class="logo logo-lg" />
+      </a>
+    </div>
+    <app-nav-content (NavCollapsedMob)="navCollapseMob()" (SubmenuCollapse)="navSubmenuCollapse()"
+      class="scroll-div w-100 compact" />
+  </div>
+</nav>

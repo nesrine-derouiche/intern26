@@ -1,0 +1,1273 @@
+<div class="welcome-hero card mb-4">
+  <div class="card-body">
+    <div class="d-flex align-items-center flex-wrap gap-3">
+      <div class="hero-avatar">
+        <span>{{ initials() }}</span>
+      </div>
+      <div class="flex-grow-1 min-w-0">
+        <p class="hero-greeting mb-1">{{ greeting() }}</p>
+        <h3 class="hero-name mb-2">{{ currentUser()?.prenom || 'Utilisateur' }} {{ currentUser()?.nom }}</h3>
+        <span class="badge hero-role">{{ getRoleLabel() }}</span>
+      </div>
+      <div class="hero-date ms-auto text-md-end text-start">
+        <div class="d-flex align-items-center gap-2">
+          <i class="ti ti-calendar"></i>
+          <span class="hero-date-text">{{ todayLabel }}</span>
+        </div>
+        <small class="hero-date-sub">Vue d'ensemble de votre espace de travail</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger mb-4 d-flex align-items-center" role="alert">
+    <i class="ti ti-alert-triangle me-2 fs-4"></i>
+    <div>
+      {{ errorMessage() }}
+    </div>
+  </div>
+}
+
+<!-- Loading skeletons -->
+@if (loading() && !stats()) {
+  <div class="row g-3 mb-4">
+    @for (i of skeletonSummary; track i) {
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card summary-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3">
+              <div class="skeleton skeleton-icon"></div>
+              <div class="flex-grow-1">
+                <div class="skeleton skeleton-line w-25 mb-2"></div>
+                <div class="skeleton skeleton-title w-50 mb-2"></div>
+                <div class="skeleton skeleton-line w-40"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <div class="row g-3 mb-3">
+    @for (i of skeletonActions; track i) {
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3">
+              <div class="skeleton skeleton-icon"></div>
+              <div class="flex-grow-1">
+                <div class="skeleton skeleton-line w-60 mb-2"></div>
+                <div class="skeleton skeleton-line w-30"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <div class="row g-3 mb-3">
+    @for (i of skeletonCards; track i) {
+      <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="skeleton skeleton-line w-40 mb-3"></div>
+            <div class="skeleton skeleton-title mb-2"></div>
+            <div class="skeleton skeleton-line w-25"></div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <div class="row g-3 mb-3">
+    @for (i of [1, 2]; track i) {
+      <div class="col-xl-6 col-12">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="skeleton skeleton-line w-30 mb-3"></div>
+            <div class="skeleton skeleton-chart"></div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <div class="row g-3">
+    @for (i of [1, 2]; track i) {
+      <div class="col-xl-4 col-12">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="skeleton skeleton-line w-40 mb-3"></div>
+            @for (j of skeletonRows; track j) {
+              <div class="skeleton skeleton-line w-100 mb-2"></div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- Today's summary + Quick actions (all roles) -->
+@if (!(loading() && !stats())) {
+  <div class="mb-4">
+    <div class="section-head mb-3">
+      <h5 class="mb-0"><i class="ti ti-sun me-2 text-warning"></i>Résumé du jour</h5>
+      <small class="text-muted">Aperçu rapide de l'activité</small>
+    </div>
+    <div class="row g-3">
+      @for (item of summary(); track item.label) {
+        <div class="col-6 col-md-4 col-xl">
+          <div class="card summary-card h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon" [ngClass]="'stat-icon-' + item.color">
+                  <i class="ti" [ngClass]="item.icon"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="summary-value d-block">{{ item.value }}</span>
+                  <span class="summary-label text-truncate d-block">{{ item.label }}</span>
+                  <small class="text-muted text-truncate d-block">{{ item.sub }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <div class="section-head mb-3">
+      <h5 class="mb-0"><i class="ti ti-bolt me-2 text-primary"></i>Actions rapides</h5>
+      <small class="text-muted">Raccourcis vers les fonctions fréquentes</small>
+    </div>
+    <div class="row g-3">
+      @for (action of quickActions(); track action.label) {
+        <div class="col-6 col-md-4 col-xl">
+          <div class="card quick-action h-100" role="button" tabindex="0" (click)="runAction(action)" (keyup.enter)="runAction(action)">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon" [ngClass]="'stat-icon-' + action.color">
+                  <i class="ti" [ngClass]="action.icon"></i>
+                </div>
+                <div class="min-w-0 flex-grow-1">
+                  <span class="quick-label text-truncate d-block">{{ action.label }}</span>
+                  <small class="text-muted">Accès rapide</small>
+                </div>
+                <i class="ti ti-chevron-right quick-arrow"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ADMIN / RH dashboard -->
+@if (!(loading() && !stats()) && isAdmin()) {
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-3">
+    @for (kpi of kpis(); track kpi.label) {
+      <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <p class="stat-label mb-1">{{ kpi.label }}</p>
+                <h2 class="stat-value mb-0">{{ kpi.value }}</h2>
+                <small class="text-muted">{{ kpi.sub }}</small>
+              </div>
+              <div class="stat-icon" [ngClass]="'stat-icon-' + kpi.color">
+                <i class="ti" [ngClass]="kpi.icon"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Alerts -->
+  <div class="row g-3 mb-4">
+    @for (alert of alerts(); track alert.key) {
+      <div class="col-xl-3 col-lg-6 col-12">
+        <div class="card widget-card h-100">
+          <div class="card-body">
+            <div class="widget-header">
+              <h6 class="widget-title mb-0">
+                <i class="ti me-2" [ngClass]="[alert.icon, 'alert-icon-' + alert.color]"></i>{{ alert.title }}
+              </h6>
+              <span class="badge rounded-pill" [ngClass]="'bg-' + alert.color">{{ alert.items.length }}</span>
+            </div>
+            <div class="mt-2">
+              @if (alert.items.length > 0) {
+                @for (item of alert.items; track $index) {
+                  <div class="widget-row">
+                    <div class="flex-grow-1 min-w-0">
+                      <span class="widget-row-title text-truncate d-block">{{ alertItemTitle(item) }}</span>
+                      <small class="d-block text-muted">{{ alertItemSub(item) }}</small>
+                    </div>
+                    <small class="text-muted ms-2">{{ alertItemDate(item) | date:'dd/MM' }}</small>
+                  </div>
+                }
+              } @else {
+                <div class="empty-state">
+                  <i class="ti ti-shield-check"></i>
+                  <p>{{ alert.emptyMsg }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Charts -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-line me-2 text-primary"></i>Candidatures par mois</h5>
+          </div>
+          <app-widget-chart [options]="appsChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-bar me-2 text-primary"></i>Stages par département</h5>
+          </div>
+          <app-widget-chart [options]="deptChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-donut me-2 text-primary"></i>Répartition des stages</h5>
+          </div>
+          <app-widget-chart [options]="statusChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-trophy me-2 text-success"></i>Top encadrants</h5>
+          </div>
+          <app-widget-chart [options]="topSupChart()" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widgets -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-file-description me-2 text-primary"></i>Dernières candidatures</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentCandidatures?.length ?? 0 }}</span>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Stagiaire</th>
+                  <th>Offre</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of stats()?.recentCandidatures; track c.id) {
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-2">
+                          <span>{{ c.stagiaire_prenom?.charAt(0) }}{{ c.stagiaire_nom?.charAt(0) }}</span>
+                        </div>
+                        <span class="fw-medium">{{ c.stagiaire_prenom }} {{ c.stagiaire_nom }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="d-block fw-medium text-truncate">{{ c.offre_titre }}</span>
+                      <small class="text-muted">{{ c.departement_nom }}</small>
+                    </td>
+                    <td><span [class]="getCandStatusBadge(c.statut)">{{ getCandStatusLabel(c.statut) }}</span></td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3">
+                      <div class="empty-state">
+                        <i class="ti ti-file-description"></i>
+                        <p>Aucune candidature récente</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-school me-2 text-primary"></i>Derniers stages</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentStages?.length ?? 0 }}</span>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Stagiaire</th>
+                  <th>Encadrant</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of stats()?.recentStages; track s.id) {
+                  <tr>
+                    <td>
+                      <span class="fw-medium">{{ s.stagiaire_prenom }} {{ s.stagiaire_nom }}</span>
+                      <small class="d-block text-muted">{{ s.departement_nom }}</small>
+                    </td>
+                    <td>
+                      <span class="d-block fw-medium">{{ s.encadrant_prenom }} {{ s.encadrant_nom }}</span>
+                      <small class="text-muted">Fin : {{ s.date_fin | date:'dd/MM/yyyy' }}</small>
+                    </td>
+                    <td><span [class]="getStageStatusBadge(s.statut)">{{ getStageStatusLabel(s.statut) }}</span></td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3">
+                      <div class="empty-state">
+                        <i class="ti ti-school"></i>
+                        <p>Aucun stage récent</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-4 col-lg-4 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-file-text me-2 text-primary"></i>Derniers documents</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentDocuments?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (d of stats()?.recentDocuments; track d.id) {
+              <div class="widget-row">
+                <div class="doc-icon"><i [class]="getDocIcon(d.type)"></i></div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ d.nom }}</span>
+                  <small class="d-block text-muted">{{ d.stagiaire_prenom }} {{ d.stagiaire_nom }} · {{ d.type }}</small>
+                </div>
+                <small class="text-muted ms-2">{{ d.date_depot | date:'dd/MM' }}</small>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-file-text"></i>
+                <p>Aucun document déposé</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-4 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-calendar-event me-2 text-primary"></i>Prochaines réunions</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.prochainesReunions?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (r of stats()?.prochainesReunions; track r.id) {
+              <div class="widget-row">
+                <div class="meet-date">
+                  <span class="meet-day">{{ r.date | date:'dd' }}</span>
+                  <span class="meet-month">{{ r.date | date:'MMM' }}</span>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ r.sujet }}</span>
+                  <small class="d-block text-muted">{{ r.heure?.slice(0, 5) }} · {{ r.salle || 'Salle à définir' }}</small>
+                </div>
+                <small class="text-muted ms-2">{{ r.stagiaire_prenom?.charAt(0) }}{{ r.stagiaire_nom?.charAt(0) }}</small>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-calendar-event"></i>
+                <p>Aucune réunion à venir</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-4 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-bell me-2 text-primary"></i>Notifications récentes</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentNotifications?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (n of stats()?.recentNotifications; track n.id) {
+              <div class="widget-row">
+                <div class="notif-dot" [ngClass]="{ unread: !n.lue }"></div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ n.titre }}</span>
+                  <small class="d-block text-muted text-truncate">{{ n.message }}</small>
+                </div>
+                <small class="text-muted ms-2">{{ n.date | date:'dd/MM HH:mm' }}</small>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-bell"></i>
+                <p>Aucune notification</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- RH (Ressources Humaines) dashboard -->
+@if (!(loading() && !stats()) && isRH()) {
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-3">
+    @for (kpi of rhKpis(); track kpi.label) {
+      <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <p class="stat-label mb-1">{{ kpi.label }}</p>
+                <h2 class="stat-value mb-0">{{ kpi.value }}</h2>
+                <small class="text-muted">{{ kpi.sub }}</small>
+              </div>
+              <div class="stat-icon" [ngClass]="'stat-icon-' + kpi.color">
+                <i class="ti" [ngClass]="kpi.icon"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Alerts -->
+  <div class="row g-3 mb-4">
+    @for (alert of rhAlerts(); track alert.key) {
+      <div class="col-xl-3 col-lg-6 col-12">
+        <div class="card widget-card h-100">
+          <div class="card-body">
+            <div class="widget-header">
+              <h6 class="widget-title mb-0">
+                <i class="ti me-2" [ngClass]="[alert.icon, 'alert-icon-' + alert.color]"></i>{{ alert.title }}
+              </h6>
+              <span class="badge rounded-pill" [ngClass]="'bg-' + alert.color">{{ alert.items.length }}</span>
+            </div>
+            <div class="mt-2">
+              @if (alert.items.length > 0) {
+                @for (item of alert.items; track $index) {
+                  <div class="widget-row">
+                    <div class="flex-grow-1 min-w-0">
+                      <span class="widget-row-title text-truncate d-block">{{ alertItemTitle(item) }}</span>
+                      <small class="d-block text-muted">{{ alertItemSub(item) }}</small>
+                    </div>
+                    <small class="text-muted ms-2">{{ alertItemDate(item) | date:'dd/MM' }}</small>
+                  </div>
+                }
+              } @else {
+                <div class="empty-state">
+                  <i class="ti ti-shield-check"></i>
+                  <p>{{ alert.emptyMsg }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Charts -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-line me-2 text-primary"></i>Candidatures par mois</h5>
+          </div>
+          <app-widget-chart [options]="appsChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-bar me-2 text-primary"></i>Candidatures par département</h5>
+          </div>
+          <app-widget-chart [options]="rhAppsDeptChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-donut me-2 text-success"></i>Répartition des recrutements</h5>
+          </div>
+          <app-widget-chart [options]="rhRecruitChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-briefcase me-2 text-warning"></i>Offres par département</h5>
+          </div>
+          <app-widget-chart [options]="rhOffresDeptChart()" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widgets -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-file-description me-2 text-primary"></i>Dernières candidatures</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentCandidatures?.length ?? 0 }}</span>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Stagiaire</th>
+                  <th>Offre</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of stats()?.recentCandidatures; track c.id) {
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-2">
+                          <span>{{ c.stagiaire_prenom?.charAt(0) }}{{ c.stagiaire_nom?.charAt(0) }}</span>
+                        </div>
+                        <span class="fw-medium">{{ c.stagiaire_prenom }} {{ c.stagiaire_nom }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="d-block fw-medium text-truncate">{{ c.offre_titre }}</span>
+                      <small class="text-muted">{{ c.departement_nom }}</small>
+                    </td>
+                    <td><span [class]="getCandStatusBadge(c.statut)">{{ getCandStatusLabel(c.statut) }}</span></td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3">
+                      <div class="empty-state">
+                        <i class="ti ti-file-description"></i>
+                        <p>Aucune candidature récente</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-user-check me-2 text-success"></i>Derniers stagiaires acceptés</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentInternsAcceptes?.length ?? 0 }}</span>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Stagiaire</th>
+                  <th>Offre</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of stats()?.recentInternsAcceptes; track c.id) {
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-2">
+                          <span>{{ c.stagiaire_prenom?.charAt(0) }}{{ c.stagiaire_nom?.charAt(0) }}</span>
+                        </div>
+                        <span class="fw-medium">{{ c.stagiaire_prenom }} {{ c.stagiaire_nom }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="d-block fw-medium text-truncate">{{ c.offre_titre }}</span>
+                      <small class="text-muted">{{ c.departement_nom }}</small>
+                    </td>
+                    <td><small class="text-muted">{{ c.date_candidature | date:'dd/MM/yyyy' }}</small></td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3">
+                      <div class="empty-state">
+                        <i class="ti ti-user-check"></i>
+                        <p>Aucun stagiaire accepté</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-4 col-lg-4 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-calendar-event me-2 text-primary"></i>Prochains stages</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.prochainsStages?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (st of stats()?.prochainsStages; track st.id) {
+              <div class="widget-row">
+                <div class="meet-date">
+                  <span class="meet-day">{{ st.date_debut | date:'dd' }}</span>
+                  <span class="meet-month">{{ st.date_debut | date:'MMM' }}</span>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ st.stagiaire_prenom }} {{ st.stagiaire_nom }}</span>
+                  <small class="d-block text-muted text-truncate">{{ st.offre_titre }} · {{ st.departement_nom }}</small>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-calendar-event"></i>
+                <p>Aucun stage à venir</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-4 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-file-text me-2 text-primary"></i>Derniers documents</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentDocuments?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (d of stats()?.recentDocuments; track d.id) {
+              <div class="widget-row">
+                <div class="doc-icon"><i [class]="getDocIcon(d.type)"></i></div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ d.nom }}</span>
+                  <small class="d-block text-muted">{{ d.stagiaire_prenom }} {{ d.stagiaire_nom }} · {{ d.type }}</small>
+                </div>
+                <small class="text-muted ms-2">{{ d.date_depot | date:'dd/MM' }}</small>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-file-text"></i>
+                <p>Aucun document déposé</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-4 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-calendar-stats me-2 text-primary"></i>Réunions à venir</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.prochainesReunions?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (r of stats()?.prochainesReunions; track r.id) {
+              <div class="widget-row">
+                <div class="meet-date">
+                  <span class="meet-day">{{ r.date | date:'dd' }}</span>
+                  <span class="meet-month">{{ r.date | date:'MMM' }}</span>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ r.sujet }}</span>
+                  <small class="d-block text-muted">{{ r.heure?.slice(0, 5) }} · {{ r.salle || 'Salle à définir' }}</small>
+                </div>
+                <small class="text-muted ms-2">{{ r.stagiaire_prenom?.charAt(0) }}{{ r.stagiaire_nom?.charAt(0) }}</small>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-calendar-stats"></i>
+                <p>Aucune réunion à venir</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Encadrant (Supervisor) dashboard -->
+@if (!(loading() && !stats()) && isEncadrant()) {
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-3">
+    @for (kpi of encKpis(); track kpi.label) {
+      <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 col-12">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="min-w-0 me-2">
+                <p class="stat-label mb-1">{{ kpi.label }}</p>
+                <h2 class="stat-value mb-0">{{ kpi.value }}</h2>
+                <small class="text-muted">{{ kpi.sub }}</small>
+              </div>
+              <div class="stat-icon" [ngClass]="'stat-icon-' + kpi.color">
+                <i class="ti" [ngClass]="kpi.icon"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Alerts -->
+  <div class="row g-3 mb-4">
+    @for (alert of encAlerts(); track alert.key) {
+      <div class="col-xl-3 col-lg-6 col-12">
+        <div class="card widget-card h-100">
+          <div class="card-body">
+            <div class="widget-header">
+              <h6 class="widget-title mb-0">
+                <i class="ti me-2" [ngClass]="[alert.icon, 'alert-icon-' + alert.color]"></i>{{ alert.title }}
+              </h6>
+              <span class="badge rounded-pill" [ngClass]="'bg-' + alert.color">{{ alert.items.length }}</span>
+            </div>
+            <div class="mt-2">
+              @if (alert.items.length > 0) {
+                @for (item of alert.items; track $index) {
+                  <div class="widget-row">
+                    <div class="flex-grow-1 min-w-0">
+                      <span class="widget-row-title text-truncate d-block">{{ alertItemTitle(item) }}</span>
+                      <small class="d-block text-muted">{{ alertItemSub(item) }}</small>
+                    </div>
+                    <small class="text-muted ms-2">{{ alertItemDate(item) | date:'dd/MM' }}</small>
+                  </div>
+                }
+              } @else {
+                <div class="empty-state">
+                  <i class="ti ti-shield-check"></i>
+                  <p>{{ alert.emptyMsg }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Charts -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-donut me-2 text-success"></i>Avancement des tâches</h5>
+          </div>
+          <app-widget-chart [options]="encTaskChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-bar me-2 text-primary"></i>Progression des stages</h5>
+          </div>
+          <app-widget-chart [options]="encInternshipsChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-donut me-2 text-warning"></i>Tâches par statut</h5>
+          </div>
+          <app-widget-chart [options]="encTasksStatusChart()" />
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header mb-3">
+            <h5 class="widget-title mb-0"><i class="ti ti-chart-bar me-2 text-info"></i>Réunions par mois</h5>
+          </div>
+          <app-widget-chart [options]="encMeetingsChart()" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widgets -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-checklist me-2 text-primary"></i>Tâches du jour</h5>
+            <div class="d-flex align-items-center gap-2">
+              <a routerLink="/taches" class="btn btn-sm btn-outline-primary">Voir tout</a>
+              <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.encadrant?.tachesDuJour?.length ?? 0 }}</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            @for (t of stats()?.encadrant?.tachesDuJour; track t.id) {
+              <div class="widget-row">
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ t.titre }}</span>
+                  <small class="d-block text-muted">{{ t.executant_prenom }} {{ t.executant_nom }} · {{ t.projet_titre }} · échéance {{ t.date_fin | date:'dd/MM' }}</small>
+                </div>
+                <div class="text-end ms-2">
+                  <span [class]="getPriorityBadge(t.priorite)">{{ t.priorite }}</span>
+                  <span [class]="getStatusBadge(t.statut)" class="ms-1">{{ getStatusLabel(t.statut) }}</span>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-checklist"></i>
+                <p>Aucune tâche aujourd'hui</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-calendar-event me-2 text-primary"></i>Prochaines réunions</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.prochainesReunions?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (r of stats()?.prochainesReunions; track r.id) {
+              <div class="widget-row">
+                <div class="meet-date">
+                  <span class="meet-day">{{ r.date | date:'dd' }}</span>
+                  <span class="meet-month">{{ r.date | date:'MMM' }}</span>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ r.sujet }}</span>
+                  <small class="d-block text-muted">{{ r.heure?.slice(0, 5) }} · {{ r.salle || 'Salle à définir' }}</small>
+                </div>
+                <small class="text-muted ms-2">{{ r.stagiaire_prenom?.charAt(0) }}{{ r.stagiaire_nom?.charAt(0) }}</small>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-calendar-event"></i>
+                <p>Aucune réunion à venir</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-file-text me-2 text-primary"></i>Derniers documents</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentDocuments?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (d of stats()?.recentDocuments; track d.id) {
+              <div class="widget-row">
+                <div class="doc-icon"><i [class]="getDocIcon(d.type)"></i></div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ d.nom }}</span>
+                  <small class="d-block text-muted">{{ d.stagiaire_prenom }} {{ d.stagiaire_nom }} · {{ d.type }}</small>
+                </div>
+                <small class="text-muted ms-2">{{ d.date_depot | date:'dd/MM' }}</small>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-file-text"></i>
+                <p>Aucun document déposé</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card widget-card h-100">
+        <div class="card-body">
+          <div class="widget-header">
+            <h5 class="widget-title mb-0"><i class="ti ti-bell me-2 text-primary"></i>Notifications récentes</h5>
+            <span class="badge bg-light-primary text-primary rounded-pill">{{ stats()?.recentNotifications?.length ?? 0 }}</span>
+          </div>
+          <div class="mt-3">
+            @for (n of stats()?.recentNotifications; track n.id) {
+              <div class="widget-row">
+                <div class="notif-dot" [ngClass]="{ unread: !n.lue }"></div>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="widget-row-title text-truncate d-block">{{ n.titre }}</span>
+                  <small class="d-block text-muted text-truncate">{{ n.message }}</small>
+                </div>
+                <small class="text-muted ms-2">{{ n.date | date:'dd/MM HH:mm' }}</small>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <i class="ti ti-bell"></i>
+                <p>Aucune notification</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Other roles dashboard -->
+@if (!(loading() && !stats()) && !isAdmin() && !isRH() && !isEncadrant()) {
+  <!-- Stats Row 1 -->
+  <div class="row g-3 mb-3">
+    <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <p class="stat-label mb-1">Stagiaires actifs</p>
+              <h2 class="stat-value mb-0">{{ stats()?.stagiairesActifs || 0 }}</h2>
+            </div>
+            <div class="stat-icon stat-icon-primary">
+              <i class="ti ti-users"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <p class="stat-label mb-1">Stages en cours</p>
+              <h2 class="stat-value mb-0">{{ stats()?.stagesEnCours || 0 }}</h2>
+            </div>
+            <div class="stat-icon stat-icon-success">
+              <i class="ti ti-school"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <p class="stat-label mb-1">Stages terminés</p>
+              <h2 class="stat-value mb-0">{{ stats()?.stagesTermines || 0 }}</h2>
+            </div>
+            <div class="stat-icon stat-icon-success">
+              <i class="ti ti-circle-check"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <p class="stat-label mb-1">Tâches en cours</p>
+              <h2 class="stat-value mb-0">{{ stats()?.tachesEnCours || 0 }}</h2>
+            </div>
+            <div class="stat-icon stat-icon-warning">
+              <i class="ti ti-clock"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Row 2 -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <p class="stat-label mb-1">Tâches terminées</p>
+              <h2 class="stat-value mb-0">{{ stats()?.tachesTerminees || 0 }}</h2>
+            </div>
+            <div class="stat-icon stat-icon-success">
+              <i class="ti ti-checks"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <p class="stat-label mb-1">Tâches en retard</p>
+              <h2 class="stat-value mb-0">{{ stats()?.tachesEnRetard || 0 }}</h2>
+            </div>
+            <div class="stat-icon stat-icon-danger">
+              <i class="ti ti-alarm"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <p class="stat-label mb-1">Candidatures</p>
+              <h2 class="stat-value mb-0">{{ stats()?.candidaturesTotal || 0 }}</h2>
+              @if ((stats()?.candidaturesEnAttente || 0) > 0) {
+                <small class="text-warning">{{ stats()?.candidaturesEnAttente }} en attente</small>
+              }
+            </div>
+            <div class="stat-icon stat-icon-warning">
+              <i class="ti ti-file-description"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-lg-6 col-sm-6 col-12">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <p class="stat-label mb-1">Offres disponibles</p>
+              <h2 class="stat-value mb-0">{{ stats()?.offresOuvertes || 0 }}</h2>
+              @if (!isStagiaire()) {
+                <small class="text-muted">/ {{ stats()?.offresTotal || 0 }} total</small>
+              }
+            </div>
+            <div class="stat-icon stat-icon-primary">
+              <i class="ti ti-briefcase"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress + Departments -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-8 col-lg-7 col-12">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Progression des tâches</h5>
+            <a routerLink="/taches" class="btn btn-sm btn-outline-primary">Voir tout</a>
+          </div>
+          <div class="row text-center g-3">
+            <div class="col-md-4 col-4">
+              <div class="task-ring">
+                <svg viewBox="0 0 100 100">
+                  <circle class="ring-bg" cx="50" cy="50" r="42" />
+                  <circle class="ring-progress ring-gray" cx="50" cy="50" r="42"
+                    [attr.stroke-dasharray]="264" [attr.stroke-dashoffset]="264" />
+                </svg>
+                <div class="ring-content">
+                  <span class="ring-number">{{ stats()?.tachesAFaire || 0 }}</span>
+                </div>
+              </div>
+              <p class="ring-label mt-2 mb-0">À faire</p>
+            </div>
+            <div class="col-md-4 col-4">
+              <div class="task-ring">
+                <svg viewBox="0 0 100 100">
+                  <circle class="ring-bg" cx="50" cy="50" r="42" />
+                  <circle class="ring-progress ring-primary" cx="50" cy="50" r="42"
+                    [attr.stroke-dasharray]="264"
+                    [attr.stroke-dashoffset]="264 - (264 * (stats()?.tachesEnCours || 0) / (stats()?.tachesTotal || 1))" />
+                </svg>
+                <div class="ring-content">
+                  <span class="ring-number">{{ stats()?.tachesEnCours || 0 }}</span>
+                </div>
+              </div>
+              <p class="ring-label mt-2 mb-0">En cours</p>
+            </div>
+            <div class="col-md-4 col-4">
+              <div class="task-ring">
+                <svg viewBox="0 0 100 100">
+                  <circle class="ring-bg" cx="50" cy="50" r="42" />
+                  <circle class="ring-progress ring-success" cx="50" cy="50" r="42"
+                    [attr.stroke-dasharray]="264"
+                    [attr.stroke-dashoffset]="264 - (264 * (stats()?.tachesTerminees || 0) / (stats()?.tachesTotal || 1))" />
+                </svg>
+                <div class="ring-content">
+                  <span class="ring-number">{{ stats()?.tachesTerminees || 0 }}</span>
+                </div>
+              </div>
+              <p class="ring-label mt-2 mb-0">Terminées</p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted fw-medium">Progression globale</span>
+              <span class="fw-semibold text-primary">{{ getProgress() }}%</span>
+            </div>
+            <div class="progress" style="height: 6px;">
+              <div class="progress-bar" role="progressbar"
+                [style.width]="getProgress() + '%'">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5 col-12">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Départements <span class="badge bg-primary ms-1">{{ stats()?.departementsTotal || 0 }}</span></h5>
+            <a routerLink="/departements" class="btn btn-sm btn-outline-primary">Gérer</a>
+          </div>
+          @if (stats()?.departements && stats()?.departements.length > 0) {
+            @for (dept of stats()?.departements; track dept.id; let i = $index) {
+              <div class="dept-item">
+                <div class="d-flex align-items-center">
+                  <div class="dept-icon" [ngClass]="'dept-color-' + (i % 4)">
+                    <i class="ti ti-building"></i>
+                  </div>
+                  <div class="ms-3 flex-grow-1">
+                    <span class="dept-name">{{ dept.nom }}</span>
+                    <small class="d-block text-muted">{{ dept.nb_encadrants }} encadrant(s)</small>
+                  </div>
+                  <span class="dept-count" title="Stages actifs">{{ dept.nb_stages_actifs }}</span>
+                </div>
+              </div>
+            }
+          } @else {
+            <div class="text-center py-4 text-muted">
+              <i class="ti ti-building d-block mb-2" style="font-size: 1.5rem; opacity: 0.3;"></i>
+              <p>Aucun département</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Tasks -->
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Tâches récentes</h5>
+        <a routerLink="/taches" class="btn btn-sm btn-outline-primary">Voir tout</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Tâche</th>
+              <th>Exécutant</th>
+              <th>Projet</th>
+              <th>Priorité</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tache of recentTaches(); track tache.id) {
+              <tr>
+                <td>
+                  <span class="fw-medium">{{ tache.titre }}</span>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="avatar avatar-sm me-2">
+                      <span style="font-size: 0.625rem;">{{ tache.executant_prenom?.charAt(0) }}{{ tache.executant_nom?.charAt(0) }}</span>
+                    </div>
+                    <span>{{ tache.executant_prenom }} {{ tache.executant_nom }}</span>
+                  </div>
+                </td>
+                <td class="text-muted">{{ tache.projet_titre }}</td>
+                <td><span [class]="getPriorityBadge(tache.priorite)">{{ tache.priorite }}</span></td>
+                <td><span [class]="getStatusBadge(tache.statut)">{{ getStatusLabel(tache.statut) }}</span></td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                  Aucune tâche récente
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+}

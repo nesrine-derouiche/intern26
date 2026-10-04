@@ -1,0 +1,456 @@
+<!-- ── Page Header ───────────────────────────────────────── -->
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Gestion des Tâches</h4>
+      <p class="text-muted mb-0">Créez et assignez des tâches à vos stagiaires</p>
+    </div>
+    <div class="d-flex gap-2">
+      <div class="view-toggle">
+        <button class="view-btn" [class.active]="viewMode() === 'table'" (click)="viewMode.set('table')" title="Vue tableau">
+          <i class="ti ti-table"></i>
+        </button>
+        <button class="view-btn" [class.active]="viewMode() === 'kanban'" (click)="viewMode.set('kanban')" title="Vue kanban">
+          <i class="ti ti-layout-columns"></i>
+        </button>
+      </div>
+      <button class="btn btn-primary-custom" (click)="openAdd()">
+        <i class="ti ti-plus me-1"></i> Nouvelle tâche
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Stats cliquables ───────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-clickable" [class.active]="filterStatus()==='tous'" (click)="filterStatus.set('tous')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-primary-light"><i class="ti ti-list"></i></div>
+        <div><h6>Total</h6><p>{{ stats.total }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-clickable" [class.active]="filterStatus()==='A_FAIRE'" (click)="filterStatus.set('A_FAIRE')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-warning-light"><i class="ti ti-clock"></i></div>
+        <div><h6>À faire</h6><p>{{ stats.a_faire }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-clickable" [class.active]="filterStatus()==='EN_COURS'" (click)="filterStatus.set('EN_COURS')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-info-light"><i class="ti ti-loader"></i></div>
+        <div><h6>En cours</h6><p>{{ stats.en_cours }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-clickable" [class.active]="filterStatus()==='TERMINEE'" (click)="filterStatus.set('TERMINEE')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-success-light"><i class="ti ti-check"></i></div>
+        <div><h6>Terminées</h6><p>{{ stats.terminee }}</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Filters ────────────────────────────────────────────── -->
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center g-3">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control" placeholder="Rechercher une tâche, exécutant, projet..."
+            [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+          @if (searchTerm()) {
+            <button class="btn btn-outline-secondary" (click)="searchTerm.set('')"><i class="ti ti-x"></i></button>
+          }
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="btn-group flex-wrap" role="group">
+          <input type="radio" class="btn-check" name="fSt" id="fAll" value="tous" [checked]="filterStatus()==='tous'" (change)="filterStatus.set('tous')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fAll">Toutes</label>
+          <input type="radio" class="btn-check" name="fSt" id="fAF" value="A_FAIRE" [checked]="filterStatus()==='A_FAIRE'" (change)="filterStatus.set('A_FAIRE')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fAF"><span class="dot dot-secondary me-1"></span>À faire</label>
+          <input type="radio" class="btn-check" name="fSt" id="fEC" value="EN_COURS" [checked]="filterStatus()==='EN_COURS'" (change)="filterStatus.set('EN_COURS')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fEC"><span class="dot dot-primary me-1"></span>En cours</label>
+          <input type="radio" class="btn-check" name="fSt" id="fT" value="TERMINEE" [checked]="filterStatus()==='TERMINEE'" (change)="filterStatus.set('TERMINEE')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fT"><span class="dot dot-success me-1"></span>Terminée</label>
+          <input type="radio" class="btn-check" name="fSt" id="fB" value="BLOQUEE" [checked]="filterStatus()==='BLOQUEE'" (change)="filterStatus.set('BLOQUEE')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fB"><span class="dot dot-danger me-1"></span>Bloquée</label>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" [ngModel]="filterPriorite()" (ngModelChange)="filterPriorite.set($event)">
+          <option value="toutes">Toutes priorités</option>
+          <option value="BASSE">🔵 Basse</option>
+          <option value="MOYENNE">🟡 Moyenne</option>
+          <option value="HAUTE">🔴 Haute</option>
+          <option value="URGENTE">🔥 Urgente</option>
+        </select>
+      </div>
+      <div class="col-md-2 text-end">
+        <span class="text-muted small fw-medium">{{ filtered().length }} tâche(s)</span>
+        @if (stats.bloquee > 0) {
+          <div class="badge bg-danger ms-2 d-inline">{{ stats.bloquee }} bloquée(s)</div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TABLE VIEW ─────────────────────────────────────────── -->
+@if (viewMode() === 'table') {
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Tâche</th><th>Exécutant</th><th>Priorité</th><th>Progression</th><th>Statut</th><th>Échéance</th><th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of filtered(); track t.id) {
+          <tr class="task-row" (click)="openDetail(t)">
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="task-status-dot" [style.background]="getProgressColor(t)"></div>
+                <div>
+                  <h6 class="mb-0 task-title">{{ t.titre }}</h6>
+                  @if (t.description) { <small class="text-muted">{{ t.description | slice:0:60 }}{{ t.description.length > 60 ? '...' : '' }}</small> }
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar avatar-sm">{{ t.executant_prenom?.charAt(0) }}{{ t.executant_nom?.charAt(0) }}</div>
+                <span>{{ t.executant_prenom }} {{ t.executant_nom }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="priority-badge" [ngClass]="{'priorite-faible': t.priorite === 'BASSE','priorite-moyen': t.priorite === 'MOYENNE','priorite-fort': t.priorite === 'HAUTE' || t.priorite === 'URGENTE'}">
+                <i class="ti me-1" [ngClass]="{'ti-flag': t.priorite === 'BASSE','ti-alert-triangle': t.priorite === 'MOYENNE','ti-flame': t.priorite === 'HAUTE' || t.priorite === 'URGENTE'}"></i>
+                {{ getPriorityLabel(t.priorite) }}
+              </span>
+            </td>
+            <td>
+              <div class="progress-wrapper">
+                <div class="progress-track">
+                  <div class="progress-fill" [style.width.%]="getProgressWidth(t)" [style.background]="getProgressColor(t)"></div>
+                </div>
+                <span class="progress-text">{{ getProgressWidth(t) }}%</span>
+              </div>
+            </td>
+            <td>
+              <span class="task-status-badge" [ngClass]="{'termine': t.statut === 'TERMINEE','en-cours': t.statut === 'EN_COURS','en-attente': t.statut === 'A_FAIRE','bloquee': t.statut === 'BLOQUEE'}">
+                {{ getStatusLabel(t.statut) }}
+              </span>
+            </td>
+            <td>
+              <span [class]="getDaysClass(t)">{{ getDaysInfo(t) }}</span>
+              @if (t.date_debut) { <br><small class="text-muted">Début : {{ t.date_debut | date:'dd/MM/yy' }}</small> }
+            </td>
+            <td class="text-center" (click)="$event.stopPropagation()">
+              <div class="d-flex gap-1 justify-content-center">
+                <button class="btn btn-sm btn-outline-primary" (click)="openEdit(t)"><i class="ti ti-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger" (click)="delete(t.id)"><i class="ti ti-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+          } @empty {
+          <tr><td colspan="7">
+            <div class="empty-state">
+              <div class="empty-icon"><i class="ti ti-checkbox"></i></div>
+              <h5>Aucune tâche trouvée</h5>
+              <p>Modifiez vos filtres ou créez une nouvelle tâche</p>
+            </div>
+          </td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ── KANBAN VIEW ────────────────────────────────────────── -->
+@if (viewMode() === 'kanban') {
+<div class="kanban-board">
+
+  <!-- À faire -->
+  <div class="kanban-col">
+    <div class="kanban-col-header" style="border-top:3px solid #9ca3af">
+      <span class="kanban-col-title">À faire</span>
+      <span class="badge bg-secondary">{{ getKanbanCount('A_FAIRE') }}</span>
+    </div>
+    @for (t of filtered(); track t.id) { @if (t.statut === 'A_FAIRE') {
+      <div class="kanban-card" (click)="openDetail(t)">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="priority-badge" [ngClass]="{'priorite-faible':t.priorite==='BASSE','priorite-moyen':t.priorite==='MOYENNE','priorite-fort':t.priorite==='HAUTE'||t.priorite==='URGENTE'}">{{ getPriorityLabel(t.priorite) }}</span>
+          <span [class]="getDaysClass(t)" style="font-size:0.7rem">{{ getDaysInfo(t) }}</span>
+        </div>
+        <h6 class="kanban-card-title">{{ t.titre }}</h6>
+        @if (t.description) { <p class="kanban-card-desc">{{ t.description | slice:0:80 }}{{ t.description.length > 80 ? '…' : '' }}</p> }
+        <div class="progress-track mt-2" style="height:4px"><div class="progress-fill" [style.width.%]="getProgressWidth(t)" [style.background]="getProgressColor(t)"></div></div>
+        <div class="d-flex align-items-center justify-content-between mt-2">
+          <div class="d-flex align-items-center gap-1">
+            <div class="avatar" style="width:20px;height:20px;font-size:0.55rem">{{ t.executant_prenom?.charAt(0) }}{{ t.executant_nom?.charAt(0) }}</div>
+            <small class="text-muted">{{ t.executant_prenom }} {{ t.executant_nom }}</small>
+          </div>
+          <small class="fw-bold" [style.color]="getProgressColor(t)">{{ getProgressWidth(t) }}%</small>
+        </div>
+      </div>
+    } }
+  </div>
+
+  <div class="kanban-col">
+    <div class="kanban-col-header" style="border-top:3px solid #5B5CEB">
+      <span class="kanban-col-title">En cours</span>
+      <span class="badge bg-primary">{{ getKanbanCount('EN_COURS') }}</span>
+    </div>
+    @for (t of filtered(); track t.id) { @if (t.statut === 'EN_COURS') {
+      <div class="kanban-card kanban-card-active" (click)="openDetail(t)">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="priority-badge" [ngClass]="{'priorite-faible':t.priorite==='BASSE','priorite-moyen':t.priorite==='MOYENNE','priorite-fort':t.priorite==='HAUTE'||t.priorite==='URGENTE'}">{{ getPriorityLabel(t.priorite) }}</span>
+          <span [class]="getDaysClass(t)" style="font-size:0.7rem">{{ getDaysInfo(t) }}</span>
+        </div>
+        <h6 class="kanban-card-title">{{ t.titre }}</h6>
+        @if (t.description) { <p class="kanban-card-desc">{{ t.description | slice:0:80 }}{{ t.description.length > 80 ? '…' : '' }}</p> }
+        <div class="progress-track mt-2" style="height:4px"><div class="progress-fill" [style.width.%]="getProgressWidth(t)" [style.background]="getProgressColor(t)"></div></div>
+        <div class="d-flex align-items-center justify-content-between mt-2">
+          <div class="d-flex align-items-center gap-1">
+            <div class="avatar" style="width:20px;height:20px;font-size:0.55rem">{{ t.executant_prenom?.charAt(0) }}{{ t.executant_nom?.charAt(0) }}</div>
+            <small class="text-muted">{{ t.executant_prenom }} {{ t.executant_nom }}</small>
+          </div>
+          <small class="fw-bold" [style.color]="getProgressColor(t)">{{ getProgressWidth(t) }}%</small>
+        </div>
+      </div>
+    } }
+  </div>
+
+  <div class="kanban-col">
+    <div class="kanban-col-header" style="border-top:3px solid #16a34a">
+      <span class="kanban-col-title">Terminées</span>
+      <span class="badge bg-success">{{ getKanbanCount('TERMINEE') }}</span>
+    </div>
+    @for (t of filtered(); track t.id) { @if (t.statut === 'TERMINEE') {
+      <div class="kanban-card kanban-card-done" (click)="openDetail(t)">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="task-status-badge termine">✓ Terminée</span>
+          <small class="text-muted" style="font-size:0.7rem">{{ t.date_fin | date:'dd/MM' }}</small>
+        </div>
+        <h6 class="kanban-card-title" style="text-decoration:line-through;opacity:0.6">{{ t.titre }}</h6>
+        <div class="d-flex align-items-center gap-1 mt-2">
+          <div class="avatar" style="width:20px;height:20px;font-size:0.55rem">{{ t.executant_prenom?.charAt(0) }}{{ t.executant_nom?.charAt(0) }}</div>
+          <small class="text-muted">{{ t.executant_prenom }} {{ t.executant_nom }}</small>
+        </div>
+      </div>
+    } }
+  </div>
+
+  <div class="kanban-col">
+    <div class="kanban-col-header" style="border-top:3px solid #dc2626">
+      <span class="kanban-col-title">Bloquées</span>
+      <span class="badge bg-danger">{{ getKanbanCount('BLOQUEE') }}</span>
+    </div>
+    @for (t of filtered(); track t.id) { @if (t.statut === 'BLOQUEE') {
+      <div class="kanban-card kanban-card-blocked" (click)="openDetail(t)">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="task-status-badge bloquee">⛔ Bloquée</span>
+          <span [class]="getDaysClass(t)" style="font-size:0.7rem">{{ getDaysInfo(t) }}</span>
+        </div>
+        <h6 class="kanban-card-title">{{ t.titre }}</h6>
+        <div class="d-flex align-items-center gap-1 mt-2">
+          <div class="avatar" style="width:20px;height:20px;font-size:0.55rem">{{ t.executant_prenom?.charAt(0) }}{{ t.executant_nom?.charAt(0) }}</div>
+          <small class="text-muted">{{ t.executant_prenom }} {{ t.executant_nom }}</small>
+        </div>
+      </div>
+    } }
+  </div>
+
+</div>
+}
+
+<!-- ── DETAIL PANEL ───────────────────────────────────────── -->
+@if (showDetail() && selectedTask()) {
+<div class="detail-backdrop" (click)="closeDetail()"></div>
+<div class="detail-panel">
+  <div class="detail-header">
+    <div class="d-flex justify-content-between align-items-start">
+      <div style="flex:1;min-width:0">
+        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+          <span class="task-status-badge" [ngClass]="{'termine':selectedTask().statut==='TERMINEE','en-cours':selectedTask().statut==='EN_COURS','en-attente':selectedTask().statut==='A_FAIRE','bloquee':selectedTask().statut==='BLOQUEE'}">{{ getStatusLabel(selectedTask().statut) }}</span>
+          <span class="priority-badge" [ngClass]="{'priorite-faible':selectedTask().priorite==='BASSE','priorite-moyen':selectedTask().priorite==='MOYENNE','priorite-fort':selectedTask().priorite==='HAUTE'||selectedTask().priorite==='URGENTE'}">{{ getPriorityLabel(selectedTask().priorite) }}</span>
+          @if (getDaysClass(selectedTask()) === 'text-danger fw-bold') { <span class="badge bg-danger">⚠ En retard</span> }
+        </div>
+        <h5 class="mb-0">{{ selectedTask().titre }}</h5>
+        <small class="text-muted">{{ selectedTask().projet_titre }}</small>
+      </div>
+      <button class="btn btn-sm btn-icon btn-outline-secondary ms-2" (click)="closeDetail()"><i class="ti ti-x"></i></button>
+    </div>
+  </div>
+
+  <div class="detail-body">
+    @if (selectedTask().description) {
+    <div class="detail-section">
+      <h6>Description</h6>
+      <p class="text-muted mb-0">{{ selectedTask().description }}</p>
+    </div>
+    }
+
+    <div class="detail-section">
+      <h6>Progression</h6>
+      <div class="detail-progress">
+        <div class="progress-track-lg">
+          <div class="progress-fill-lg" [style.width.%]="getProgressWidth(selectedTask())" [style.background]="getProgressColor(selectedTask())"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+          <span class="small text-muted">Avancement</span>
+          <span class="small fw-bold" [style.color]="getProgressColor(selectedTask())">{{ getProgressWidth(selectedTask()) }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h6>Informations</h6>
+      <div class="detail-info-grid">
+        <div class="detail-info-item">
+          <span class="info-label">Exécutant</span>
+          <div class="d-flex align-items-center gap-2 mt-1">
+            <div class="avatar avatar-sm">{{ selectedTask().executant_prenom?.charAt(0) }}{{ selectedTask().executant_nom?.charAt(0) }}</div>
+            <span class="info-value">{{ selectedTask().executant_prenom }} {{ selectedTask().executant_nom }}</span>
+          </div>
+        </div>
+        <div class="detail-info-item">
+          <span class="info-label">Projet</span>
+          <span class="info-value">{{ selectedTask().projet_titre || '—' }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="info-label">Créé par</span>
+          <span class="info-value">{{ selectedTask().createur_prenom }} {{ selectedTask().createur_nom }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="info-label">Échéance</span>
+          <span class="info-value" [ngClass]="getDaysClass(selectedTask())">{{ getDaysInfo(selectedTask()) }}</span>
+        </div>
+        @if (selectedTask().estimated_hours) {
+        <div class="detail-info-item">
+          <span class="info-label">Heures estimées</span>
+          <span class="info-value">{{ selectedTask().estimated_hours }}h</span>
+        </div>
+        }
+        @if (selectedTask().spent_hours != null) {
+        <div class="detail-info-item">
+          <span class="info-label">Heures passées</span>
+          <span class="info-value">{{ selectedTask().spent_hours }}h</span>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h6>Chronologie</h6>
+      <div class="timeline">
+        @for (item of getTimeline(selectedTask()); track item.label) {
+        <div class="timeline-item">
+          <div class="timeline-icon" [style.background]="item.color + '20'" [style.color]="item.color">
+            <i class="ti" [ngClass]="item.icon"></i>
+          </div>
+          <div class="timeline-content">
+            <span class="timeline-label">{{ item.label }}</span>
+            <span class="timeline-date">{{ item.date }}</span>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="detail-actions">
+      <button class="btn btn-primary-custom btn-sm me-2" (click)="closeDetail(); openEdit(selectedTask())">
+        <i class="ti ti-pencil me-1"></i> Modifier
+      </button>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">Changer le statut</button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" (click)="updateStatus(selectedTask().id, 'A_FAIRE')">⬜ À faire</a></li>
+          <li><a class="dropdown-item" (click)="updateStatus(selectedTask().id, 'EN_COURS')">🔵 En cours</a></li>
+          <li><a class="dropdown-item" (click)="updateStatus(selectedTask().id, 'TERMINEE')">✅ Terminée</a></li>
+          <li><a class="dropdown-item text-danger" (click)="updateStatus(selectedTask().id, 'BLOQUEE')">⛔ Bloquée</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ── MODAL FORM ─────────────────────────────────────────── -->
+@if (showModal()) {
+<div class="modal-backdrop-custom" (click)="closeModal()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ editMode() ? 'Modifier la tâche' : 'Nouvelle tâche' }}</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+        <div class="mb-3">
+          <label class="form-label">Titre *</label>
+          <input type="text" class="form-control" [(ngModel)]="form.titre" placeholder="Titre de la tâche" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" [(ngModel)]="form.description" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Projet *</label>
+          <select class="form-select" [(ngModel)]="form.projet_id">
+            <option value="">Sélectionner un projet</option>
+            @for (p of projets(); track p.id) { <option [value]="p.id">{{ p.titre }}</option> }
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Exécutant *</label>
+          <select class="form-select" [(ngModel)]="form.executant_id">
+            <option value="">Sélectionner un stagiaire</option>
+            @for (s of stagiaires(); track s.id) { <option [value]="s.id">{{ s.prenom }} {{ s.nom }}</option> }
+          </select>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Priorité</label>
+            <select class="form-select" [(ngModel)]="form.priorite">
+              <option value="BASSE">🔵 Basse</option>
+              <option value="MOYENNE">🟡 Moyenne</option>
+              <option value="HAUTE">🔴 Haute</option>
+              <option value="URGENTE">🔥 Urgente</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Date début</label>
+            <input type="date" class="form-control" [(ngModel)]="form.date_debut" />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Date fin (échéance)</label>
+          <input type="date" class="form-control" [(ngModel)]="form.date_fin" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="save()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          {{ editMode() ? 'Mettre à jour' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

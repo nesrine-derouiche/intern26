@@ -1,0 +1,20 @@
+<section class="why" id="pourquoi">
+  <div class="container">
+    <app-section-header
+      eyebrow="Pourquoi STEG"
+      title="Une expérience qui fait la différence"
+      subtitle="La STEG accueille chaque année des centaines de stagiaires et met tout en œuvre pour transformer leur stage en véritable tremplin professionnel."
+      [centered]="true"
+    />
+
+    <div class="why__grid">
+      @for (point of points(); track point.titre; let i = $index) {
+        <article class="why-card" appReveal [delay]="i * 90">
+          <span class="why-card__icon"><app-icon [name]="point.icon" /></span>
+          <h3 class="why-card__title">{{ point.titre }}</h3>
+          <p class="why-card__text">{{ point.description }}</p>
+        </article>
+      }
+    </div>
+  </div>
+</section>

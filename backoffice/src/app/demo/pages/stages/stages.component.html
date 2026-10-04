@@ -1,0 +1,419 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Gestion des Stages</h4>
+      <p class="text-muted mb-0">Suivi de tous les stages en cours</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-clickable" [class.active]="filterStatus()==='tous'" (click)="filterStatus.set('tous')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-primary-light"><i class="ti ti-briefcase"></i></div>
+        <div><h6>Total</h6><p>{{ stats.total }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-clickable" [class.active]="filterStatus()==='EN_COURS'" (click)="filterStatus.set('EN_COURS')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-info-light"><i class="ti ti-loader"></i></div>
+        <div><h6>En cours</h6><p>{{ stats.en_cours }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-clickable" [class.active]="filterStatus()==='TERMINE'" (click)="filterStatus.set('TERMINE')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-success-light"><i class="ti ti-check"></i></div>
+        <div><h6>Terminés</h6><p>{{ stats.termine }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-clickable" [class.active]="filterStatus()==='EN_ATTENTE'" (click)="filterStatus.set('EN_ATTENTE')">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-warning-light"><i class="ti ti-clock"></i></div>
+        <div><h6>En attente</h6><p>{{ stats.en_attente }}</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center g-3">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control" placeholder="Rechercher un stage..."
+            [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="btn-group flex-wrap" role="group">
+          <input type="radio" class="btn-check" name="filterStatus" id="fAll" value="tous"
+            [checked]="filterStatus()==='tous'" (change)="filterStatus.set('tous')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fAll">Tous</label>
+          <input type="radio" class="btn-check" name="filterStatus" id="fEC" value="EN_COURS"
+            [checked]="filterStatus()==='EN_COURS'" (change)="filterStatus.set('EN_COURS')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fEC">En cours</label>
+          <input type="radio" class="btn-check" name="filterStatus" id="fT" value="TERMINE"
+            [checked]="filterStatus()==='TERMINE'" (change)="filterStatus.set('TERMINE')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fT">Terminé</label>
+          <input type="radio" class="btn-check" name="filterStatus" id="fEA" value="EN_ATTENTE"
+            [checked]="filterStatus()==='EN_ATTENTE'" (change)="filterStatus.set('EN_ATTENTE')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fEA">En attente</label>
+        </div>
+      </div>
+      <div class="col-md-3 text-end">
+        <span class="text-muted small">{{ filtered().length }} stage(s)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Stagiaire</th>
+            <th>Département</th>
+            <th>Encadrant</th>
+            <th>Période</th>
+            <th>Progression</th>
+            <th>Statut</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of filtered(); track s.id) {
+          <tr class="stage-row" (click)="openDetail(s)">
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar avatar-sm">
+                  {{ s.stagiaire_prenom?.charAt(0) }}{{ s.stagiaire_nom?.charAt(0) }}
+                </div>
+                <div>
+                  <h6 class="mb-0">{{ s.stagiaire_prenom }} {{ s.stagiaire_nom }}</h6>
+                  <small class="text-muted">{{ s.offre_titre }}</small>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge bg-primary">{{ s.departement_nom }}</span></td>
+            <td>{{ s.encadrant_prenom }} {{ s.encadrant_nom }}</td>
+            <td>
+              <div class="text-nowrap">
+                <small class="text-muted">{{ s.date_debut | date:'dd/MM/yy' }}</small>
+                <i class="ti ti-arrow-right mx-1 text-muted"></i>
+                <small class="text-muted">{{ s.date_fin | date:'dd/MM/yy' }}</small>
+              </div>
+            </td>
+            <td>
+              <div class="progress-wrapper">
+                <div class="progress-track">
+                  <div class="progress-fill" [style.width.%]="getProgress(s)"
+                    [style.background]="getProgress(s) >= 80 ? '#16a34a' : '#5B5CEB'"></div>
+                </div>
+                <span class="progress-text">{{ getProgress(s) }}%</span>
+              </div>
+            </td>
+            <td>
+              <span [class]="getStatusBadge(s.statut)">{{ getStatusLabel(s.statut) }}</span>
+            </td>
+            <td class="text-center" (click)="$event.stopPropagation()">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Changer</button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" (click)="updateStatus(s.id, 'EN_COURS')">En cours</a></li>
+                  <li><a class="dropdown-item" (click)="updateStatus(s.id, 'TERMINE')">Terminé</a></li>
+                  <li><a class="dropdown-item" (click)="updateStatus(s.id, 'SUSPENDU')">Suspendu</a></li>
+                  <li><a class="dropdown-item text-danger" (click)="updateStatus(s.id, 'EN_ATTENTE')">En attente</a></li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <div class="empty-icon"><i class="ti ti-briefcase"></i></div>
+                <h5>Aucun stage trouvé</h5>
+                <p>Modifiez vos filtres de recherche</p>
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (showDetail() && selectedStage()) {
+<div class="detail-backdrop" (click)="closeDetail()"></div>
+<div class="detail-panel">
+  <div class="detail-header">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="avatar">
+            {{ selectedStage().stagiaire_prenom?.charAt(0) }}{{ selectedStage().stagiaire_nom?.charAt(0) }}
+          </div>
+          <div>
+            <h5 class="mb-0">{{ selectedStage().stagiaire_prenom }} {{ selectedStage().stagiaire_nom }}</h5>
+            <small class="text-muted">{{ selectedStage().departement_nom }}</small>
+          </div>
+        </div>
+        <span [class]="getStatusBadge(selectedStage().statut)">{{ getStatusLabel(selectedStage().statut) }}</span>
+      </div>
+      <button class="btn btn-sm btn-icon btn-outline-secondary" (click)="closeDetail()">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="detail-tabs">
+    <button class="tab-btn" [class.active]="activeTab()==='info'" (click)="activeTab.set('info')">
+      <i class="ti ti-info-circle me-1"></i> Informations
+    </button>
+    <button class="tab-btn" [class.active]="activeTab()==='taches'" (click)="activeTab.set('taches')">
+      <i class="ti ti-list-check me-1"></i> Tâches
+    </button>
+    <button class="tab-btn" [class.active]="activeTab()==='documents'" (click)="activeTab.set('documents')">
+      <i class="ti ti-file me-1"></i> Documents
+    </button>
+    <button class="tab-btn" [class.active]="activeTab()==='reunions'" (click)="activeTab.set('reunions')">
+      <i class="ti ti-users me-1"></i> Réunions
+    </button>
+    <button class="tab-btn" [class.active]="activeTab()==='evaluations'" (click)="activeTab.set('evaluations')">
+      <i class="ti ti-star me-1"></i> Évaluations
+    </button>
+  </div>
+
+  <div class="detail-body">
+    @if (activeTab() === 'info') {
+    <div class="detail-section">
+      <h6>Progression du stage</h6>
+      <div class="detail-progress">
+        <div class="progress-track-lg">
+          <div class="progress-fill-lg" [style.width.%]="getProgress(selectedStage())"
+            [style.background]="getProgress(selectedStage()) >= 80 ? '#16a34a' : '#5B5CEB'"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+          <span class="small text-muted">Avancement</span>
+          <span class="small fw-bold">{{ getProgress(selectedStage()) }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h6>Informations générales</h6>
+      <div class="detail-info-grid">
+        <div class="detail-info-item">
+          <span class="info-label">Encadrant</span>
+          <span class="info-value">{{ selectedStage().encadrant_prenom }} {{ selectedStage().encadrant_nom }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="info-label">Département</span>
+          <span class="info-value">{{ selectedStage().departement_nom }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="info-label">Offre</span>
+          <span class="info-value">{{ selectedStage().offre_titre }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="info-label">Projets</span>
+          <span class="info-value">{{ selectedStage().nb_projets || 0 }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="info-label">Date début</span>
+          <span class="info-value">{{ selectedStage().date_debut | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="detail-info-item">
+          <span class="info-label">Date fin</span>
+          <span class="info-value">{{ selectedStage().date_fin | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h6>Documents PDF</h6>
+      <div class="pdf-actions">
+        <button class="btn btn-outline-primary btn-sm" (click)="downloadPdf(selectedStage().id, 'convention')">
+          <i class="ti ti-file-text me-1"></i> Convention
+        </button>
+        <button class="btn btn-outline-primary btn-sm" (click)="downloadPdf(selectedStage().id, 'attestation')">
+          <i class="ti ti-certificate me-1"></i> Attestation
+        </button>
+        <button class="btn btn-outline-primary btn-sm" (click)="downloadPdf(selectedStage().id, 'evaluation')">
+          <i class="ti ti-star me-1"></i> Évaluation
+        </button>
+      </div>
+    </div>
+    }
+
+    @if (activeTab() === 'taches') {
+    <div class="detail-section">
+      <h6>Tâches liées ({{ stageTaches().length }})</h6>
+      @if (loadingDetail()) {
+        <div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>
+      } @else if (stageTaches().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon"><i class="ti ti-list-check"></i></div>
+          <h5>Aucune tâche</h5>
+          <p>Aucune tâche n'est associée à ce stage</p>
+        </div>
+      } @else {
+        <div class="task-list">
+          @for (t of stageTaches(); track t.id) {
+          <div class="task-list-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <span class="fw-medium">{{ t.titre }}</span>
+                <div class="mt-1">
+                  <span class="task-status-badge" [ngClass]="{
+                    'termine': t.statut === 'TERMINEE',
+                    'en-cours': t.statut === 'EN_COURS',
+                    'en-attente': t.statut === 'A_FAIRE'
+                  }">{{ getTaskStatusLabel(t.statut) }}</span>
+                  <span class="ms-2 text-muted small">{{ t.executant_prenom }} {{ t.executant_nom }}</span>
+                </div>
+              </div>
+              <span class="small fw-bold" [style.color]="t.progress >= 80 ? '#16a34a' : '#5B5CEB'">{{ t.progress || 0 }}%</span>
+            </div>
+            <div class="progress-track mt-2" style="height: 4px;">
+              <div class="progress-fill" [style.width.%]="t.progress || 0"
+                [style.background]="t.progress >= 80 ? '#16a34a' : '#5B5CEB'"></div>
+            </div>
+          </div>
+          }
+        </div>
+      }
+    </div>
+    }
+
+    @if (activeTab() === 'documents') {
+    <div class="detail-section">
+      <h6>Documents ({{ stageDocs().length }})</h6>
+      @if (stageDocs().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon"><i class="ti ti-file"></i></div>
+          <h5>Aucun document</h5>
+          <p>Aucun document n'a été déposé pour ce stage</p>
+        </div>
+      } @else {
+        <div class="doc-list">
+          @for (doc of stageDocs(); track doc.id) {
+          <div class="doc-list-item">
+            <div class="d-flex align-items-center gap-3">
+              <div class="doc-icon">
+                <i class="ti" [ngClass]="getDocTypeIcon(doc.type)"></i>
+              </div>
+              <div>
+                <span class="fw-medium">{{ doc.nom }}</span>
+                <div class="text-muted small">{{ doc.type }} · {{ doc.date_depot | date:'dd/MM/yyyy' }}</div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      }
+    </div>
+    }
+
+    @if (activeTab() === 'reunions') {
+    <div class="detail-section">
+      <h6>Réunions ({{ stageReunions().length }})</h6>
+      @if (stageReunions().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon"><i class="ti ti-users"></i></div>
+          <h5>Aucune réunion</h5>
+          <p>Aucune réunion planifiée pour ce stage</p>
+        </div>
+      } @else {
+        <div class="reunion-list">
+          @for (r of stageReunions(); track r.id) {
+          <div class="reunion-list-item">
+            <div class="reunion-date-badge">
+              <span class="day">{{ r.date | date:'dd' }}</span>
+              <span class="month">{{ r.date | date:'MMM' }}</span>
+            </div>
+            <div class="flex-grow-1">
+              <span class="fw-medium">{{ r.sujet }}</span>
+              <div class="text-muted small mt-1">
+                <i class="ti ti-clock me-1"></i>{{ r.heure }}
+                @if (r.salle) { <span class="ms-2"><i class="ti ti-map-pin me-1"></i>{{ r.salle }}</span> }
+                @if (r.lien_visio) { <span class="ms-2"><i class="ti ti-link me-1"></i>Visio</span> }
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      }
+    </div>
+    }
+
+    @if (activeTab() === 'evaluations') {
+    <div class="detail-section">
+      <h6>Évaluations ({{ stageEvaluations().length }})</h6>
+      @if (stageEvaluations().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon"><i class="ti ti-star"></i></div>
+          <h5>Aucune évaluation</h5>
+          <p>Ce stage n'a pas encore été évalué</p>
+        </div>
+      } @else {
+        @for (ev of stageEvaluations(); track ev.id) {
+        <div class="eval-card">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <span class="fw-medium">{{ ev.encadrant_prenom }} {{ ev.encadrant_nom }}</span>
+              <div class="text-muted small">{{ ev.date_evaluation | date:'dd/MM/yyyy' }}</div>
+            </div>
+            <span class="badge bg-primary fs-6 px-3 py-1">{{ ev.note_finale }}/20</span>
+          </div>
+          <div class="eval-criteria">
+            <div class="eval-criteria-row">
+              <span>Technique</span>
+              <div class="eval-bar"><div class="eval-bar-fill" [style.width.%]="ev.technique * 5"></div></div>
+              <span class="fw-bold">{{ ev.technique }}/20</span>
+            </div>
+            <div class="eval-criteria-row">
+              <span>Communication</span>
+              <div class="eval-bar"><div class="eval-bar-fill" [style.width.%]="ev.communication * 5"></div></div>
+              <span class="fw-bold">{{ ev.communication }}/20</span>
+            </div>
+            <div class="eval-criteria-row">
+              <span>Autonomie</span>
+              <div class="eval-bar"><div class="eval-bar-fill" [style.width.%]="ev.autonomie * 5"></div></div>
+              <span class="fw-bold">{{ ev.autonomie }}/20</span>
+            </div>
+            <div class="eval-criteria-row">
+              <span>Ponctualité</span>
+              <div class="eval-bar"><div class="eval-bar-fill" [style.width.%]="ev.ponctualite * 5"></div></div>
+              <span class="fw-bold">{{ ev.ponctualite }}/20</span>
+            </div>
+            <div class="eval-criteria-row">
+              <span>Qualité</span>
+              <div class="eval-bar"><div class="eval-bar-fill" [style.width.%]="ev.qualite * 5"></div></div>
+              <span class="fw-bold">{{ ev.qualite }}/20</span>
+            </div>
+          </div>
+          @if (ev.commentaire) {
+          <div class="mt-3 p-3 bg-light rounded">
+            <small class="text-muted fst-italic">"{{ ev.commentaire }}"</small>
+          </div>
+          }
+        </div>
+        }
+      }
+    </div>
+    }
+  </div>
+</div>
+}

@@ -1,0 +1,87 @@
+<div class="page-header mb-4">
+  <h4 class="mb-1">Messagerie</h4>
+  <p class="text-muted mb-0">Communiquez directement avec vos stagiaires</p>
+</div>
+
+<div class="card messages-layout">
+  <div class="row g-0">
+    <!-- Conversations List -->
+    <div class="col-md-4 conversations-panel">
+      <div class="conversations-header">
+        <h6 class="mb-0">Conversations</h6>
+      </div>
+      <div class="conversations-list">
+        @for (conv of conversations(); track conv.stagiaireId) {
+        <div class="conversation-item" [class.active]="selectedStagiaire()?.id === conv.stagiaireId"
+          (click)="selectConversation(conv.stagiaireId, conv.stagiaireName)">
+          <div class="avatar avatar-sm bg-light-primary me-3">
+            <span class="text-primary fw-bold">{{ conv.stagiaireName.split(' ')[0].charAt(0) }}{{ conv.stagiaireName.split(' ')[1]?.charAt(0) || '' }}</span>
+          </div>
+          <div class="conversation-info flex-grow-1">
+            <div class="d-flex justify-content-between">
+              <h6 class="mb-0">{{ conv.stagiaireName }}</h6>
+              <small class="text-muted">{{ formatDate(conv.lastTimestamp) }}</small>
+            </div>
+            <p class="text-muted mb-0 text-truncate">{{ conv.lastMessage || 'Aucun message' }}</p>
+          </div>
+          @if (conv.unread > 0) {
+          <span class="badge bg-primary rounded-pill">{{ conv.unread }}</span>
+          }
+        </div>
+        } @empty {
+        <div class="text-center text-muted py-4">Aucune conversation</div>
+        }
+      </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="col-md-8 chat-panel">
+      @if (selectedStagiaire()) {
+      <div class="chat-header">
+        <div class="d-flex align-items-center">
+          <div class="avatar avatar-sm bg-light-primary me-3">
+            <span class="text-primary fw-bold">{{ selectedStagiaire()?.name?.split(' ')[0]?.charAt(0) }}{{ selectedStagiaire()?.name?.split(' ')[1]?.charAt(0) || '' }}</span>
+          </div>
+          <div>
+            <h6 class="mb-0">{{ selectedStagiaire()?.name }}</h6>
+            <small class="text-muted">Stagiaire</small>
+          </div>
+        </div>
+      </div>
+
+      <div id="messages-container" class="messages-container">
+        @for (msg of messages(); track msg.id) {
+        <div class="message" [class.sent]="msg.isEncadrant" [class.received]="!msg.isEncadrant">
+          <div class="message-bubble">
+            <p class="mb-1">{{ msg.content }}</p>
+            <small class="message-time">{{ formatTime(msg.timestamp) }}</small>
+          </div>
+        </div>
+        } @empty {
+        <div class="text-center text-muted py-5">
+          <i class="ti ti-message f-32 mb-2 d-block"></i>
+          <p>Aucun message. Commencez la conversation !</p>
+        </div>
+        }
+      </div>
+
+      <div class="chat-input">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Écrire un message..."
+            [ngModel]="newMessage()" (ngModelChange)="newMessage.set($event)"
+            (keyup.enter)="sendMessage()" />
+          <button class="btn btn-primary-custom" (click)="sendMessage()" [disabled]="loading() || !newMessage().trim()">
+            <i class="ti ti-send"></i>
+          </button>
+        </div>
+      </div>
+      } @else {
+      <div class="chat-empty">
+        <i class="ti ti-message-circle f-48 mb-3 d-block"></i>
+        <h5>Sélectionnez une conversation</h5>
+        <p class="text-muted">Choisissez un stagiaire pour commencer à discuter</p>
+      </div>
+      }
+    </div>
+  </div>
+</div>

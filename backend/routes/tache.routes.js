@@ -1,0 +1,16 @@
+const express = require('express');
+const router = express.Router();
+const c = require('../controllers/tache.controller');
+const { authenticateToken: auth } = require('../middlewares/auth.middleware');
+const { requireRole: role } = require('../middlewares/role.middleware');
+const { withScope, authorizeResource } = require('../middlewares/authorization.middleware');
+const { enforceOnboardingAccess } = require('../middlewares/onboarding-access.middleware');
+const { createTaskValidation, updateTaskValidation } = require('../validators/task.validator');
+const { validate } = require('../validators');
+router.use(auth, withScope, enforceOnboardingAccess);
+router.get('/mes-taches', c.getMesTaches);
+router.get('/', c.getAll);
+router.post('/', role('ENCADRANT', 'ADMIN'), createTaskValidation, validate, c.create);
+router.put('/:id', role('ENCADRANT', 'ADMIN'), updateTaskValidation, validate, authorizeResource('tache'), c.update);
+router.delete('/:id', role('ENCADRANT', 'ADMIN'), authorizeResource('tache'), c.delete);
+module.exports = router;

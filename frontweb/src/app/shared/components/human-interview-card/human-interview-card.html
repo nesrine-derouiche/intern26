@@ -1,0 +1,76 @@
+@if (loading()) {
+  <div class="hi hi--muted">
+    <app-icon name="loader" />
+    Chargement de l'entretien…
+  </div>
+} @else if (error()) {
+  <div class="hi hi--error" role="alert">
+    <app-icon name="alert-triangle" />
+    Impossible de charger les informations de l'entretien.
+  </div>
+} @else if (interview(); as itw) {
+  <section class="hi" [attr.aria-label]="'Entretien humain ' + statutLabel(itw.statut)">
+    <header class="hi__head">
+      <h3 class="hi__title">
+        <app-icon name="video" />
+        Entretien humain
+      </h3>
+      <span class="hi__badge" [class]="'hi__badge--' + statutTone(itw.statut)">
+        {{ statutLabel(itw.statut) }}
+      </span>
+    </header>
+
+    <dl class="hi__list">
+      <div class="hi__item">
+        <dt><app-icon name="calendar" /> Date</dt>
+        <dd>{{ formatDate(itw.date) }}</dd>
+      </div>
+      <div class="hi__item">
+        <dt><app-icon name="clock" /> Heure</dt>
+        <dd>{{ formatHeure(itw.heure) }}</dd>
+      </div>
+      <div class="hi__item">
+        <dt><app-icon name="clock" /> Durée</dt>
+        <dd>{{ itw.duree }} minutes</dd>
+      </div>
+      <div class="hi__item">
+        <dt><app-icon name="video" /> Type</dt>
+        <dd>{{ typeLabel(itw) }}</dd>
+      </div>
+      @if (itw.interviewer) {
+        <div class="hi__item">
+          <dt><app-icon name="users" /> Intervieweur</dt>
+          <dd>{{ itw.interviewer }}</dd>
+        </div>
+      }
+    </dl>
+
+    @if (itw.location) {
+      <div class="hi__item">
+        <dt><app-icon name="map-pin" /> Lieu</dt>
+        <dd>{{ itw.location }}</dd>
+      </div>
+    }
+
+    @if (itw.notes) {
+      <p class="hi__notes">{{ itw.notes }}</p>
+    }
+
+    @if (canJoin(itw)) {
+      <a
+        class="btn btn--primary hi__join"
+        [href]="itw.lien_visio!"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <app-icon name="external-link" />
+        Rejoindre l'entretien
+      </a>
+    }
+  </section>
+} @else {
+  <div class="hi hi--empty">
+    <app-icon name="calendar" />
+    Aucun entretien humain planifié.
+  </div>
+}

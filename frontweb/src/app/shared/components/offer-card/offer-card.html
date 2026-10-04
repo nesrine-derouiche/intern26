@@ -1,0 +1,52 @@
+<article class="offer-card">
+  <div class="offer-card__head">
+    <span class="offer-card__dept">{{ offer().departement }}</span>
+    <span class="offer-card__level">
+      <app-icon name="graduation-cap" />
+      {{ offer().niveau }}
+    </span>
+  </div>
+
+  <h3 class="offer-card__title">{{ offer().titre }}</h3>
+  <p class="offer-card__desc">{{ offer().description }}</p>
+
+  <div class="offer-card__meta">
+    <span class="offer-card__meta-item">
+      <app-icon name="map-pin" />
+      {{ offer().localisation }}
+    </span>
+    <span class="offer-card__meta-item">
+      <app-icon name="clock" />
+      {{ offer().duree }}
+    </span>
+    <span class="offer-card__meta-item">
+      <app-icon name="users" />
+      {{ offer().places }} places
+    </span>
+    <span class="offer-card__meta-item">
+      <app-icon name="calendar" />
+      {{ formatDate(offer().dateLimite) }}
+    </span>
+  </div>
+
+  <div class="offer-card__tags">
+    @for (skill of offer().competences; track skill) {
+      <span class="offer-card__tag">{{ skill }}</span>
+    }
+  </div>
+
+  <div class="offer-card__footer">
+    <a class="btn btn--outline" [routerLink]="['/offres', offer().id]">
+      <app-icon name="eye" />
+      Voir le détail
+    </a>
+    <a
+      class="btn btn--primary"
+      [routerLink]="['/offres', offer().id]"
+      fragment="postuler"
+    >
+      Postuler
+      <app-icon name="arrow-right" />
+    </a>
+  </div>
+</article>

@@ -1,0 +1,65 @@
+<app-landing-header />
+
+<main class="auth-shell">
+  <div class="auth-card">
+    <header class="auth-card__head">
+      <span class="auth-card__icon"><app-icon name="shield" /></span>
+      <h1 class="auth-card__title">Réinitialiser le mot de passe</h1>
+      <p class="auth-card__subtitle">Choisissez un nouveau mot de passe pour votre compte.</p>
+    </header>
+
+    @if (success(); as message) {
+      <div class="auth-alert auth-alert--success" role="status">{{ message }}</div>
+      <button class="btn btn--primary btn--block" (click)="goToLogin()">
+        <app-icon name="arrow-right" />
+        Se connecter
+      </button>
+    } @else {
+      @if (error(); as message) {
+        <div class="auth-alert auth-alert--error" role="alert">{{ message }}</div>
+      }
+
+      <form (ngSubmit)="onSubmit()">
+        <div class="field">
+          <label class="field__label" for="password">Nouveau mot de passe</label>
+          <input
+            class="field__input"
+            id="password"
+            name="password"
+            type="password"
+            required
+            autocomplete="new-password"
+            placeholder="8 caractères min., 1 majuscule, 1 chiffre"
+            [ngModel]="password()"
+            (ngModelChange)="password.set($event)"
+          />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="confirm">Confirmer le mot de passe</label>
+          <input
+            class="field__input"
+            id="confirm"
+            name="confirm"
+            type="password"
+            required
+            autocomplete="new-password"
+            [ngModel]="confirm()"
+            (ngModelChange)="confirm.set($event)"
+          />
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit" [disabled]="submitting()">
+          @if (submitting()) {
+            <app-icon name="loader" />
+            Enregistrement…
+          } @else {
+            Réinitialiser
+          }
+        </button>
+      </form>
+    }
+  </div>
+</main>
+
+<app-landing-footer />

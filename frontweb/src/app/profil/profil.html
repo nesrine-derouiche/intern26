@@ -1,0 +1,338 @@
+<app-landing-header />
+
+@if (loading()) {
+  <main class="profile-loading">
+    <app-icon name="loader" />
+    Chargement du profil…
+  </main>
+} @else {
+  @if (profile(); as p) {
+    <main class="profile">
+      <!-- Bandeau identité -->
+      <section class="profile__hero">
+        <div class="container profile__hero-inner">
+          <div class="profile__identity">
+            @if (photoUrl(); as url) {
+              <img class="profile__avatar" [src]="url" alt="Photo de profil" />
+            } @else {
+              <span class="profile__avatar profile__avatar--fallback">{{ initials() }}</span>
+            }
+            <div>
+              <h1 class="profile__name">{{ p.prenom }} {{ p.nom }}</h1>
+              <p class="profile__meta">{{ p.email }}</p>
+              <span class="profile__badge">
+                <app-icon name="graduation-cap" />
+                Candidat
+                @if (p.emailVerifie) {
+                  · Email vérifié
+                }
+              </span>
+            </div>
+          </div>
+          <a class="profile__logout" routerLink="/" (click)="logout()">
+            <app-icon name="log-out" />
+            Se déconnecter
+          </a>
+        </div>
+      </section>
+
+      <section class="profile__body">
+        <div class="container">
+          @if (!p.emailVerifie) {
+            <div class="auth-alert auth-alert--info" role="status">
+              Votre adresse email n'est pas encore vérifiée. Utilisez le lien reçu lors de
+              l'inscription (ou après modification de l'email) pour l'activer.
+            </div>
+          }
+
+          @if (error(); as message) {
+            <div class="auth-alert auth-alert--error" role="alert">{{ message }}</div>
+          }
+          @if (success(); as message) {
+            <div class="auth-alert auth-alert--success" role="status">{{ message }}</div>
+          }
+          @if (emailNotice(); as message) {
+            <div class="auth-alert auth-alert--info" role="status">{{ message }}</div>
+          }
+
+          <div class="profile__grid">
+            <!-- Colonne : photo -->
+            <aside class="profile__aside">
+              <div class="panel">
+                <h2 class="panel__title">
+                  <app-icon name="camera" />
+                  Photo de profil
+                </h2>
+                <div class="photo-upload">
+                  @if (photoUrl(); as url) {
+                    <img class="photo-upload__preview" [src]="url" alt="Aperçu de la photo" />
+                  } @else {
+                    <div class="photo-upload__empty">
+                      <app-icon name="user" />
+                      Aucune photo
+                    </div>
+                  }
+                  <label class="btn btn--outline btn--block">
+                    <app-icon name="upload" />
+                    {{ uploading() ? 'Envoi…' : 'Choisir une photo' }}
+                    <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onPhotoSelected($event)" hidden />
+                  </label>
+                  <p class="panel__hint">PNG, JPG ou WEBP — 5 Mo maximum.</p>
+                </div>
+              </div>
+            </aside>
+
+            <!-- Colonne : formulaire -->
+            <form class="profile__form" (ngSubmit)="save()">
+              <div class="panel">
+                <h2 class="panel__title">
+                  <app-icon name="user" />
+                  Informations personnelles
+                </h2>
+                <div class="profile__fields">
+                  <div class="field">
+                    <label class="field__label" for="nom">Nom</label>
+                    <input
+                      class="field__input"
+                      id="nom"
+                      type="text"
+                      disabled
+                      [value]="p.nom"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="prenom">Prénom</label>
+                    <input
+                      class="field__input"
+                      id="prenom"
+                      type="text"
+                      disabled
+                      [value]="p.prenom"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="email">Adresse email</label>
+                    <input
+                      class="field__input"
+                      id="email"
+                      type="email"
+                      [value]="p.email"
+                      (input)="update('email', ($any($event.target)).value)"
+                    />
+                    <p class="field__help">
+                      La modification de l'email déclenche une nouvelle vérification.
+                    </p>
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="telephone">Téléphone</label>
+                    <input
+                      class="field__input"
+                      id="telephone"
+                      type="tel"
+                      [value]="p.telephone ?? ''"
+                      (input)="update('telephone', ($any($event.target)).value)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="adresse">Adresse</label>
+                    <input
+                      class="field__input"
+                      id="adresse"
+                      type="text"
+                      [value]="p.adresse ?? ''"
+                      (input)="update('adresse', ($any($event.target)).value)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <h2 class="panel__title">
+                  <app-icon name="graduation-cap" />
+                  Formation
+                </h2>
+                <div class="profile__fields">
+                  <div class="field">
+                    <label class="field__label" for="universite">Université / École</label>
+                    <input
+                      class="field__input"
+                      id="universite"
+                      type="text"
+                      [value]="p.universite ?? ''"
+                      (input)="update('universite', ($any($event.target)).value)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="specialite">Spécialité</label>
+                    <input
+                      class="field__input"
+                      id="specialite"
+                      type="text"
+                      [value]="p.specialite ?? ''"
+                      (input)="update('specialite', ($any($event.target)).value)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="niveau">Niveau d'études</label>
+                    <select
+                      class="field__input"
+                      id="niveau"
+                      [value]="p.niveau ?? 'Licence'"
+                      (change)="update('niveau', ($any($event.target)).value)"
+                    >
+                      @for (option of niveaux; track option) {
+                        <option [value]="option">{{ option }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <h2 class="panel__title">
+                  <app-icon name="wrench" />
+                  Compétences &amp; langues
+                </h2>
+                <div class="profile__fields">
+                  <div class="field">
+                    <label class="field__label" for="competences">Compétences</label>
+                    <app-chips-input
+                      [(value)]="p.competences"
+                      placeholder="Ex. : Angular, SQL, Git"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="langues">Langues</label>
+                    <app-chips-input [(value)]="p.langues" placeholder="Ex. : Français, Anglais" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <h2 class="panel__title">
+                  <app-icon name="link" />
+                  Liens &amp; portfolios
+                </h2>
+                <div class="profile__fields">
+                  <div class="field">
+                    <label class="field__label" for="github">GitHub</label>
+                    <input
+                      class="field__input"
+                      id="github"
+                      type="url"
+                      placeholder="https://github.com/…"
+                      [value]="p.github ?? ''"
+                      (input)="update('github', ($any($event.target)).value)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="linkedin">LinkedIn</label>
+                    <input
+                      class="field__input"
+                      id="linkedin"
+                      type="url"
+                      placeholder="https://www.linkedin.com/in/…"
+                      [value]="p.linkedin ?? ''"
+                      (input)="update('linkedin', ($any($event.target)).value)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="portfolio">Portfolio</label>
+                    <input
+                      class="field__input"
+                      id="portfolio"
+                      type="url"
+                      placeholder="https://…"
+                      [value]="p.portfolio ?? ''"
+                      (input)="update('portfolio', ($any($event.target)).value)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn btn--primary" type="submit" [disabled]="saving()">
+                @if (saving()) {
+                  <app-icon name="loader" />
+                  Enregistrement…
+                } @else {
+                  <app-icon name="check" />
+                  Enregistrer les modifications
+                }
+              </button>
+            </form>
+
+            <div class="panel">
+              <h2 class="panel__title">
+                <app-icon name="lock" />
+                Changer le mot de passe
+              </h2>
+              @if (pwdSuccess(); as message) {
+                <div class="auth-alert auth-alert--success" role="status">{{ message }}</div>
+              }
+              @if (pwdError(); as message) {
+                <div class="auth-alert auth-alert--error" role="alert">{{ message }}</div>
+              }
+              <div class="password-form">
+                <div class="field">
+                  <label class="field__label" for="pwd-current">Mot de passe actuel</label>
+                  <input
+                    class="field__input"
+                    id="pwd-current"
+                    type="password"
+                    [value]="pwdCurrent()"
+                    (input)="pwdCurrent.set(($any($event.target)).value)"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="pwd-new">Nouveau mot de passe</label>
+                  <input
+                    class="field__input"
+                    id="pwd-new"
+                    type="password"
+                    [value]="pwdNew()"
+                    (input)="pwdNew.set(($any($event.target)).value)"
+                  />
+                  <p class="field__help">8 caractères minimum, avec majuscule, minuscule et chiffre.</p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="pwd-confirm">Confirmer le nouveau mot de passe</label>
+                  <input
+                    class="field__input"
+                    id="pwd-confirm"
+                    type="password"
+                    [value]="pwdConfirm()"
+                    (input)="pwdConfirm.set(($any($event.target)).value)"
+                  />
+                  @if (pwdMismatch) {
+                    <p class="field__help field__help--error">Les mots de passe ne correspondent pas.</p>
+                  }
+                </div>
+                <button class="btn btn--outline" type="button" [disabled]="pwdSaving()" (click)="changePassword()">
+                  @if (pwdSaving()) {
+                    <app-icon name="loader" />
+                    Modification…
+                  } @else {
+                    <app-icon name="lock" />
+                    Mettre à jour le mot de passe
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  } @else if (notFound()) {
+    <main class="profile-loading">
+      <app-icon name="search" />
+      Profil introuvable.
+    </main>
+  } @else {
+    <main class="profile-loading">
+      <app-icon name="alert-triangle" />
+      {{ error() || 'Impossible de charger le profil.' }}
+    </main>
+  }
+}
+
+<app-landing-footer />

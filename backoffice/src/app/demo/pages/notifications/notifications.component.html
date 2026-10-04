@@ -1,0 +1,123 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Notifications</h4>
+      <p class="text-muted mb-0">Consultez et gérez toutes vos notifications</p>
+    </div>
+    <button type="button" class="btn btn-primary-custom" [disabled]="unread() === 0 || busy()" (click)="markAllAsRead()">
+      @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+      <i class="ti ti-checks me-1"></i> Tout marquer comme lu
+    </button>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="card notif-stat">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="notif-stat-icon bg-light-primary text-primary">
+          <i class="ti ti-bell"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="notif-stat-value">{{ total() }}</div>
+          <div class="notif-stat-label text-muted">Au total</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card notif-stat">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="notif-stat-icon bg-light-warning text-warning">
+          <i class="ti ti-bell-ringing"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="notif-stat-value">{{ unread() }}</div>
+          <div class="notif-stat-label text-muted">Non lues</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card notif-stat">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="notif-stat-icon bg-light-success text-success">
+          <i class="ti ti-circle-check"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="notif-stat-value">{{ read() }}</div>
+          <div class="notif-stat-label text-muted">Lues</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="notif-filters">
+      <button type="button" class="chip" [class.active]="!activeFilter()" (click)="setFilter(null)">
+        <i class="ti ti-apps"></i>Toutes
+      </button>
+      @for (cat of CATEGORIES; track cat.value) {
+        <button type="button" class="chip" [class.active]="activeFilter() === cat.value" (click)="setFilter(cat.value)">
+          <i class="ti {{ cat.icon }}"></i>{{ cat.label }}
+        </button>
+      }
+    </div>
+
+    <div class="notif-list">
+      @if (loading()) {
+        <div class="notif-empty py-5">
+          <div class="spinner-border text-primary"></div>
+          <p>Chargement…</p>
+        </div>
+      } @else if (error()) {
+        <div class="notif-empty py-5">
+          <i class="ti ti-alert-triangle text-danger"></i>
+          <p>{{ error() }}</p>
+        </div>
+      } @else if (notifications().length === 0) {
+        <div class="notif-empty py-5">
+          <i class="ti ti-bell-off"></i>
+          <p>Aucune notification{{ activeFilter() ? ' dans cette catégorie' : '' }}</p>
+        </div>
+      } @else {
+        @for (n of notifications(); track n.id) {
+          <div class="notif-item" [class.unread]="!n.lue" (click)="openNotification(n)">
+            <div class="notif-icon" [ngClass]="iconClass(n.type)">
+              <i class="ti {{ iconFor(n.type) }}"></i>
+            </div>
+            <div class="notif-body min-w-0">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="notif-title">{{ n.titre }}</span>
+                @if (!n.lue) {
+                  <span class="badge rounded-pill notif-unread-pill">Nouveau</span>
+                }
+              </div>
+              <p class="notif-msg">{{ n.message }}</p>
+              <small class="notif-time">{{ n.date | relativeTime }}</small>
+            </div>
+            <button type="button" class="notif-delete" title="Supprimer" aria-label="Supprimer" (click)="remove(n); $event.stopPropagation()">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        }
+      }
+    </div>
+
+    @if (!loading() && notifications().length > 0) {
+      <div class="notif-pagination d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <small class="text-muted">{{ total() }} notification{{ total() > 1 ? 's' : '' }} · Page {{ page() }} sur {{ pages() || 1 }}</small>
+        <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">
+            <i class="ti ti-chevron-left me-1"></i>Précédent
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="page() >= pages()" (click)="goToPage(page() + 1)">
+            Suivant<i class="ti ti-chevron-right ms-1"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

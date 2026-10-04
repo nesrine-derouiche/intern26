@@ -1,0 +1,341 @@
+// ═══════════════════════════════════════════════════════════════════
+//  Shared Page Styles — Import in all CRUD page .scss files
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Page Header ───────────────────────────────────────────────
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+
+  h4 {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: #111827;
+    letter-spacing: -0.01em;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  p {
+    color: #6b7280;
+    font-size: 0.8125rem;
+    margin: 2px 0 0;
+    line-height: 1.4;
+  }
+
+  .btn {
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    h4 { font-size: 1.125rem; }
+    p { font-size: 0.75rem; }
+    .btn { align-self: flex-start; }
+  }
+}
+
+// ── Table Card ────────────────────────────────────────────────
+.table-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  background: #fff;
+  overflow: hidden;
+
+  .table {
+    th {
+      font-weight: 600;
+      color: #9ca3af;
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 16px;
+      white-space: nowrap;
+      background: #f8fafc;
+    }
+
+    td {
+      vertical-align: middle;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 0.8125rem;
+      color: #111827;
+    }
+
+    tbody tr {
+      transition: background 150ms ease;
+      &:hover { background: rgba(91, 92, 235, 0.02); }
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(248, 250, 252, 0.5);
+    }
+  }
+}
+
+// ── Search Input ──────────────────────────────────────────────
+.search-input {
+  max-width: 300px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.8125rem;
+  transition: all 150ms ease;
+  background: #f8fafc;
+
+  &:focus {
+    border-color: #5B5CEB;
+    box-shadow: 0 0 0 3px rgba(91, 92, 235, 0.15);
+    background: #fff;
+  }
+}
+
+// ── Avatar ────────────────────────────────────────────────────
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: #EDEDFE;
+  color: #5B5CEB;
+  flex-shrink: 0;
+}
+
+// ── Badges ────────────────────────────────────────────────────
+.badge {
+  font-weight: 500;
+  font-size: 0.6875rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+
+  &.bg-primary   { background: #EDEDFE !important; color: #5B5CEB !important; }
+  &.bg-success   { background: #f0fdf4 !important; color: #16a34a !important; }
+  &.bg-danger    { background: #fef2f2 !important; color: #dc2626 !important; }
+  &.bg-warning   { background: #fff7ed !important; color: #ea580c !important; }
+  &.bg-info      { background: #f0f9ff !important; color: #0284c7 !important; }
+  &.bg-secondary { background: #f3f4f6 !important; color: #6b7280 !important; }
+}
+
+// ── Stat Cards ────────────────────────────────────────────────
+.stat-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px 20px;
+  transition: box-shadow 250ms ease;
+
+  &:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+
+    &.bg-primary-light { background: #EDEDFE; color: #5B5CEB; }
+    &.bg-success-light { background: #f0fdf4; color: #16a34a; }
+    &.bg-danger-light  { background: #fef2f2; color: #dc2626; }
+    &.bg-warning-light { background: #fff7ed; color: #ea580c; }
+    &.bg-info-light    { background: #f0f9ff; color: #0284c7; }
+  }
+
+  h6 {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  p {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+    margin: 0;
+  }
+}
+
+// ── SVG Ring Chart ────────────────────────────────────────────
+.ring-chart {
+  width: 80px;
+  height: 80px;
+
+  .ring-track {
+    fill: none;
+    stroke: #f3f4f6;
+    stroke-width: 8;
+  }
+
+  .ring-fill {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 600ms ease-out;
+    transform: rotate(-90deg);
+    transform-origin: center;
+  }
+}
+
+// ── Department List ───────────────────────────────────────────
+.dept-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child { border-bottom: none; }
+
+  .dept-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .dept-name {
+    font-weight: 500;
+    font-size: 0.8125rem;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dept-count {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    white-space: nowrap;
+  }
+
+  .dept-bar {
+    height: 4px;
+    border-radius: 100px;
+    background: #f3f4f6;
+    flex-shrink: 0;
+    width: 80px;
+
+    .dept-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: #5B5CEB;
+      transition: width 600ms ease-out;
+    }
+  }
+}
+
+// ── Recent Tasks Table ────────────────────────────────────────
+.task-status-badge {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+
+  &.en-cours       { background: #EDEDFE; color: #5B5CEB; }
+  &.termine        { background: #f0fdf4; color: #16a34a; }
+  &.en-attente     { background: #fff7ed; color: #ea580c; }
+  &.non-demarre    { background: #f3f4f6; color: #6b7280; }
+}
+
+// ── Priority Badges ───────────────────────────────────────────
+.priority-badge {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+
+  &.priorite-faible  { background: #f3f4f6; color: #6b7280; }
+  &.priorite-moyen   { background: #fff7ed; color: #ea580c; }
+  &.priorite-fort    { background: #fef2f2; color: #dc2626; }
+}
+
+// ── Empty State ───────────────────────────────────────────────
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+
+  .empty-icon {
+    font-size: 3rem;
+    color: #d1d5db;
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  h5 {
+    font-weight: 600;
+    color: #111827;
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+
+  p {
+    color: #6b7280;
+    font-size: 0.8125rem;
+  }
+}
+
+// ── Responsive ────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .page-header {
+    h4 { font-size: 1.125rem; }
+    .d-flex { flex-direction: column; gap: 8px; }
+  }
+
+  .stat-card { padding: 14px 16px; }
+  .ring-chart { width: 64px; height: 64px; }
+}
+
+@media (max-width: 576px) {
+  .page-header {
+    h4 { font-size: 0.9375rem; }
+    p { font-size: 0.75rem; }
+  }
+
+  .search-input { max-width: 100%; }
+
+  .table {
+    min-width: 480px;
+    td { padding: 10px 8px !important; font-size: 0.75rem; }
+    th { padding: 8px !important; font-size: 0.625rem !important; }
+  }
+
+  .stat-card { padding: 12px; p { font-size: 1.25rem; } }
+  .dept-bar { width: 60px; }
+}
+
+// ── Stat Clickable ──────────────────────────────────────────────
+.stat-clickable {
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 200ms;
+
+  &:hover {
+    border-color: #5B5CEB;
+    transform: translateY(-2px);
+  }
+
+  &.active {
+    border-color: #5B5CEB;
+    background: #f8fafc;
+    box-shadow: 0 4px 12px rgba(91,92,235,0.15);
+  }
+}

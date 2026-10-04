@@ -1,0 +1,597 @@
+classDiagram
+    direction TB
+
+    %% ═══════════════════════════════════════════════════════════
+    %% ENUMS (value objects)
+    %% ═══════════════════════════════════════════════════════════
+    class RoleUtilisateur {
+        <<enumeration>>
+        ADMIN
+        STAGIAIRE
+        ENCADRANT
+        CHEF_DEPARTEMENT
+        RH
+        CANDIDAT
+    }
+
+    class StatutCandidature {
+        <<enumeration>>
+        EN_ATTENTE
+        EN_ENTRETIEN_IA
+        RH_ACCEPTED
+        ACCEPTEE
+        REFUSEE
+        AI_INTERVIEW_PASSED
+        AI_INTERVIEW_FAILED
+        EN_ENTRETIEN_HUMAIN
+        HUMAN_INTERVIEW_COMPLETED
+        HUMAN_INTERVIEW_ACCEPTED
+        HUMAN_INTERVIEW_REJECTED
+        STAGIAIRE_CREATED
+    }
+
+    class StatutStage {
+        <<enumeration>>
+        EN_COURS
+        TERMINE
+        SUSPENDU
+        ANNULE
+        EN_ATTENTE
+    }
+
+    class StatutOffre {
+        <<enumeration>>
+        OUVERTE
+        FERMEE
+        EXPIREE
+        POURVUE
+    }
+
+    class StatutTache {
+        <<enumeration>>
+        A_FAIRE
+        EN_COURS
+        TERMINEE
+        BLOQUEE
+    }
+
+    class PrioriteTache {
+        <<enumeration>>
+        BASSE
+        MOYENNE
+        HAUTE
+        URGENTE
+    }
+
+    class TypeDocument {
+        <<enumeration>>
+        CV
+        CONVENTION
+        ASSURANCE
+        RAPPORT
+        ATTESTATION
+    }
+
+    class StatutJournal {
+        <<enumeration>>
+        BROUILLON
+        SOUMIS
+        VALIDE
+        REJETE
+    }
+
+    class StatutEntretienIA {
+        <<enumeration>>
+        EN_ATTENTE
+        EN_COURS
+        TERMINE
+        ABANDONNE
+    }
+
+    %% ═══════════════════════════════════════════════════════════
+    %% UTILISATEUR — hierarchy (TPC / single-table inheritance)
+    %% ═══════════════════════════════════════════════════════════
+    class Utilisateur {
+        <<abstract>>
+        +UUID id
+        +String nom
+        +String prenom
+        +String email$
+        +String motDePasse
+        +String telephone
+        +RoleUtilisateur role
+        +Boolean actif
+        +Integer tokenVersion
+        +Boolean emailVerifie
+        +String emailVerificationToken
+        +String resetToken
+        +DateTime createdAt
+        +DateTime updatedAt
+        +DateTime deletedAt
+    }
+
+    class Administrateur {
+        <<entity>>
+        +UUID id
+    }
+
+    class Rh {
+        <<entity>>
+        +UUID id
+    }
+
+    class ChefDepartement {
+        <<entity>>
+        +UUID id
+    }
+
+    class Encadrant {
+        <<entity>>
+        +UUID id
+        +String service
+        +Integer nombreMaxStagiaires
+        +String competences
+        +Boolean disponibilite
+        +UUID departementId
+    }
+
+    class Stagiaire {
+        <<entity>>
+        +UUID id
+        +String ecole
+        +String specialite
+        +String niveau
+        +String competences
+        +Boolean disponibilite
+    }
+
+    class Candidat {
+        <<entity>>
+        +UUID id
+        +String universite
+        +String specialite
+        +String niveau
+        +String competences
+        +String langues
+        +String github
+        +String linkedin
+        +String portfolio
+        +String photoPath
+        +String cvPath
+        +String cvOriginalName
+        +BigInteger cvSize
+        +DateTime cvUploadedAt
+        +DateTime createdAt
+        +DateTime updatedAt
+    }
+
+    Utilisateur <|-- Administrateur
+    Utilisateur <|-- Rh
+    Utilisateur <|-- ChefDepartement
+    Utilisateur <|-- Encadrant
+    Utilisateur <|-- Stagiaire
+    Utilisateur <|-- Candidat
+
+    %% ═══════════════════════════════════════════════════════════
+    %% PERMISSION & RBAC
+    %% ═══════════════════════════════════════════════════════════
+    class Permission {
+        <<entity>>
+        +UUID id
+        +String code$
+        +String description
+    }
+
+    class UtilisateurPermission {
+        <<entity>>
+        +UUID utilisateurId
+        +UUID permissionId
+    }
+
+    Utilisateur "1" --> "*" UtilisateurPermission : possède
+    Permission "1" --> "*" UtilisateurPermission : accorde
+
+    %% ═══════════════════════════════════════════════════════════
+    %% DEPARTEMENT
+    %% ═══════════════════════════════════════════════════════════
+    class Departement {
+        <<entity>>
+        +UUID id
+        +String nom$
+        +String description
+        +UUID chefDepartementId
+    }
+
+    ChefDepartement "1" --> "0..1" Departement : dirige
+    Encadrant "*" --> "0..1" Departement : appartient
+
+    %% ═══════════════════════════════════════════════════════════
+    %% OFFRE DE STAGE
+    %% ═══════════════════════════════════════════════════════════
+    class OffreStage {
+        <<entity>>
+        +UUID id
+        +UUID departementId
+        +String titre
+        +String description
+        +Integer duree
+        +String competencesDemandees
+        +Integer nombrePlaces
+        +Date dateLimite
+        +StatutOffre statut
+        +String missions
+        +String technologies
+        +String documentsDemandes
+        +String localisation
+        +String niveau
+        +UUID encadrantId
+    }
+
+    Departement "1" --> "*" OffreStage : contient
+    Encadrant "0..1" --> "*" OffreStage : encadre
+
+    %% ═══════════════════════════════════════════════════════════
+    %% CANDIDATURE
+    %% ═══════════════════════════════════════════════════════════
+    class Candidature {
+        <<entity>>
+        +UUID id
+        +UUID stagiaireId
+        +UUID candidatId
+        +UUID offreId
+        +StatutCandidature statut
+        +DateTime dateCandidature
+        +Date internshipStartDate
+        +Integer internshipDurationMonths
+        +DateTime internshipPeriodValidatedAt
+        +UUID internshipPeriodValidatedBy
+        +String mobileAccessEmailState
+        +DateTime mobileAccessEmailSentAt
+        +String mobileAccessCredentialsEncrypted
+        +String decision
+        +UUID decidedBy
+        +DateTime decidedAt
+        +DateTime deletedAt
+    }
+
+    Stagiaire "0..1" --> "*" Candidature : postule
+    Candidat "1" --> "*" Candidature : postule
+    OffreStage "1" --> "*" Candidature : reçoit
+
+    %% ═══════════════════════════════════════════════════════════
+    %% CANDIDATURE DOCUMENT (onboarding)
+    %% ═══════════════════════════════════════════════════════════
+    class CandidatureDocument {
+        <<entity>>
+        +UUID id
+        +UUID candidatureId
+        +String type$
+        +String nom
+        +String chemin
+        +DateTime dateDepot
+        +String statut$
+        +String rejectedReason
+        +String verificationStatus$
+    }
+
+    Candidature "1" --> "*" CandidatureDocument : contient
+
+    %% ═══════════════════════════════════════════════════════════
+    %% CANDIDATURE DECISIONS (audit trail)
+    %% ═══════════════════════════════════════════════════════════
+    class CandidatureDecision {
+        <<entity>>
+        +UUID id
+        +UUID candidatureId
+        +String decision
+        +UUID decidedBy
+        +DateTime decidedAt
+        +String previousStatus
+        +String newStatus
+        +String action
+        +UUID documentId
+    }
+
+    Candidature "1" --> "*" CandidatureDecision : historique
+    CandidatureDecision "*" --> "0..1" CandidatureDocument : concerne
+
+    %% ═══════════════════════════════════════════════════════════
+    %% STAGE
+    %% ═══════════════════════════════════════════════════════════
+    class Stage {
+        <<entity>>
+        +UUID id
+        +UUID candidatureId$
+        +UUID stagiaireId
+        +UUID encadrantId
+        +UUID departementId
+        +UUID offreId
+        +Date dateDebut
+        +Date dateFin
+        +StatutStage statut
+    }
+
+    Candidature "1" --> "0..1" Stage : converti en
+    Stagiaire "1" --> "*" Stage : effectue
+    Encadrant "1" --> "*" Stage : supervise
+    Departement "1" --> "*" Stage : héberge
+    OffreStage "1" --> "*" Stage : origin
+
+    %% ═══════════════════════════════════════════════════════════
+    %% PROJET
+    %% ═══════════════════════════════════════════════════════════
+    class Projet {
+        <<entity>>
+        +UUID id
+        +UUID stageId$
+        +String titre
+        +String description
+        +String technologies
+        +String etat
+        +Smallint avancement
+    }
+
+    Stage "1" --> "0..1" Projet : possède
+
+    %% ═══════════════════════════════════════════════════════════
+    %% TACHE (officielle — encadrant → stagiaire)
+    %% ═══════════════════════════════════════════════════════════
+    class Tache {
+        <<entity>>
+        +UUID id
+        +UUID projetId
+        +UUID createurId
+        +UUID executantId
+        +String titre
+        +String description
+        +PrioriteTache priorite
+        +Date dateDebut
+        +Date dateFin
+        +StatutTache statut
+        +Integer progress
+        +Integer estimatedHours
+        +Integer spentHours
+        +DateTime completionDate
+        +DateTime createdAt
+    }
+
+    Projet "1" --> "*" Tache : contient
+    Encadrant "1" --> "*" Tache : crée
+    Stagiaire "1" --> "*" Tache : exécute
+
+    %% ═══════════════════════════════════════════════════════════
+    %% TACHE PERSONNELLE (Kanban stagiaire)
+    %% ═══════════════════════════════════════════════════════════
+    class TachePersonnelle {
+        <<entity>>
+        +UUID id
+        +UUID stagiaireId
+        +String titre
+        +String description
+        +StatutTache statut
+        +PrioriteTache priorite
+        +Date dateEcheance
+        +Integer position
+        +DateTime createdAt
+        +DateTime updatedAt
+    }
+
+    Stagiaire "1" --> "*" TachePersonnelle : gère
+
+    %% ═══════════════════════════════════════════════════════════
+    %% DOCUMENT (stage)
+    %% ═══════════════════════════════════════════════════════════
+    class Document {
+        <<entity>>
+        +UUID id
+        +UUID stagiaireId
+        +UUID stageId
+        +TypeDocument type
+        +String nom
+        +String chemin
+        +DateTime dateDepot
+    }
+
+    Stagiaire "1" --> "*" Document : upload
+    Stage "1" --> "*" Document : contient
+
+    %% ═══════════════════════════════════════════════════════════
+    %% RAPPORT
+    %% ═══════════════════════════════════════════════════════════
+    class Rapport {
+        <<entity>>
+        +UUID id
+        +UUID stageId
+        +TypeRapport type
+        +String contenu
+        +DateTime date
+        +String statut
+        +String commentaire
+    }
+
+    Stage "1" --> "*" Rapport : produit
+
+    %% ═══════════════════════════════════════════════════════════
+    %% EVALUATION
+    %% ═══════════════════════════════════════════════════════════
+    class Evaluation {
+        <<entity>>
+        +UUID id
+        +UUID stageId
+        +UUID encadrantId
+        +Smallint technique
+        +Smallint communication
+        +Smallint autonomie
+        +Smallint ponctualite
+        +Smallint qualite
+        +Numeric noteFinale
+        +String commentaire
+        +DateTime dateEvaluation
+        +Boolean validee
+    }
+
+    Stage "1" --> "*" Evaluation : reçoit
+    Encadrant "1" --> "*" Evaluation : attribue
+
+    %% ═══════════════════════════════════════════════════════════
+    %% REUNION
+    %% ═══════════════════════════════════════════════════════════
+    class Reunion {
+        <<entity>>
+        +UUID id
+        +UUID stageId
+        +Date date
+        +Time heure
+        +String salle
+        +String lienVisio
+        +String sujet
+    }
+
+    Stage "1" --> "*" Reunion : planifie
+
+    %% ═══════════════════════════════════════════════════════════
+    %% JOURNAL
+    %% ═══════════════════════════════════════════════════════════
+    class Journal {
+        <<entity>>
+        +UUID id
+        +UUID stageId
+        +Date semaine
+        +String travaux
+        +String difficultes
+        +String solutions
+        +String competences
+        +Numeric heures
+        +StatutJournal statut
+        +String commentaire
+        +String commentaireEncadrant
+    }
+
+    Stage "1" --> "*" Journal : contient
+
+    %% ═══════════════════════════════════════════════════════════
+    %% NOTIFICATION
+    %% ═══════════════════════════════════════════════════════════
+    class Notification {
+        <<entity>>
+        +UUID id
+        +UUID utilisateurId
+        +String titre
+        +String message
+        +DateTime date
+        +String type
+        +Boolean lue
+        +String lien
+    }
+
+    Utilisateur "1" --> "*" Notification : reçoit
+
+    %% ═══════════════════════════════════════════════════════════
+    %% DEVICE TOKEN (push)
+    %% ═══════════════════════════════════════════════════════════
+    class DeviceToken {
+        <<entity>>
+        +UUID id
+        +UUID utilisateurId
+        +String token$
+        +String platform
+        +DateTime createdAt
+        +DateTime lastSeenAt
+    }
+
+    Utilisateur "1" --> "*" DeviceToken : possède
+
+    %% ═══════════════════════════════════════════════════════════
+    %% CV ANALYSE
+    %% ═══════════════════════════════════════════════════════════
+    class CvAnalyse {
+        <<entity>>
+        +UUID id
+        +UUID candidatId
+        +String cvFilename
+        +String statut
+        +Jsonb resultat
+        +String aiProvider
+        +String erreur
+    }
+
+    Candidat "1" --> "*" CvAnalyse : soumet
+
+    %% ═══════════════════════════════════════════════════════════
+    %% AI INTERVIEW — SESSIONS (engine)
+    %% ═══════════════════════════════════════════════════════════
+    class AiInterviewSession {
+        <<entity>>
+        +UUID id
+        +UUID candidatureId$
+        +String token$
+        +StatutEntretienIA statut
+        +String evaluationStatus
+        +Jsonb evaluation
+        +String pythonSessionId
+        +Jsonb integrityEvents
+        +Jsonb integrityDevices
+        +String deviceFingerprint
+        +Smallint integrityRiskScore
+        +String integrityRiskLevel
+        +Jsonb integrityFlags
+    }
+
+    class AiInterviewQuestion {
+        <<entity>>
+        +UUID id
+        +UUID sessionId
+        +Smallint questionNumber
+        +String categorie
+        +String question
+    }
+
+    class AiInterviewAnswer {
+        <<entity>>
+        +UUID id
+        +UUID sessionId
+        +Smallint questionNumber
+        +String question
+        +String answer
+        +Numeric durationSeconds
+    }
+
+    Candidature "1" --> "0..1" AiInterviewSession : génère
+    AiInterviewSession "1" --> "*" AiInterviewQuestion : contient
+    AiInterviewSession "1" --> "*" AiInterviewAnswer : contient
+
+    %% ═══════════════════════════════════════════════════════════
+    %% AI INTERVIEW — VOCAL (Python engine)
+    %% ═══════════════════════════════════════════════════════════
+    class AiInterviewVocal {
+        <<entity>>
+        +UUID id
+        +UUID candidatureId
+        +String pythonSessionId
+        +String statut$
+        +Jsonb questions
+        +Jsonb report
+        +String errorMessage
+    }
+
+    Candidature "1" --> "0..1" AiInterviewVocal : génère
+
+    %% ═══════════════════════════════════════════════════════════
+    %% HUMAN INTERVIEW
+    %% ═══════════════════════════════════════════════════════════
+    class HumanInterview {
+        <<entity>>
+        +UUID id
+        +UUID candidatureId$
+        +Date date
+        +Time heure
+        +String interviewer
+        +String interviewerEmail
+        +String lienVisio
+        +Integer duree
+        +String statut$
+        +DateTime completedAt
+        +UUID completedBy
+    }
+
+    Candidature "1" --> "0..1" HumanInterview : planifie

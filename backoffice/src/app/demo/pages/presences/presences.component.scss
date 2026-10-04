@@ -1,0 +1,18 @@
+@import '../../../../scss/pages-shared';
+
+:host {
+  display: block;
+}
+
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.form-check-label {
+  font-size: 0.8125rem;
+}
+
+.avatar {
+  text-transform: uppercase;
+}

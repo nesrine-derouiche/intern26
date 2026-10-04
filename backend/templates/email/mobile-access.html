@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Votre accès à l'application STEG Internship</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+          <tr>
+            <td style="background-color:#003366;padding:20px 24px;text-align:center;">
+              <span style="color:#ffffff;font-size:22px;font-weight:bold;">STEG Internship</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 24px;color:#333333;font-size:15px;line-height:1.6;">
+              <h1 style="margin:0 0 16px;font-size:20px;color:#003366;">Votre accès à l'application mobile</h1>
+              <p style="margin:0 0 16px;">Bonjour {{nom}},</p>
+              <p style="margin:0 0 16px;">Votre stage débutera le <strong>{{dateDebut}}</strong>. Votre accès à l'application mobile STEG Internship est maintenant disponible.</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;border-radius:6px;margin:0 0 16px;">
+                <tr>
+                  <td style="padding:16px;font-size:14px;line-height:1.7;">
+                    <strong>Identifiant :</strong><br>
+                    {{username}}<br>
+                    <strong>Mot de passe temporaire :</strong><br>
+                    {{password}}
+                  </td>
+                </tr>
+              </table>
+              {{#downloadUrl}}
+              <p style="margin:0 0 16px;"><strong>Télécharger l'application :</strong><br>
+                <a href="{{downloadUrl}}" style="color:#007bff;">{{downloadUrl}}</a>
+              </p>
+              {{/downloadUrl}}
+              <p style="margin:0 0 8px;"><strong>Instructions :</strong></p>
+              <ol style="margin:0 0 16px;padding-left:22px;">
+                <li>Téléchargez l'application.</li>
+                <li>Ouvrez l'application.</li>
+                <li>Connectez-vous avec les identifiants ci-dessus.</li>
+                <li>Suivez les étapes demandées dans l'application.</li>
+              </ol>
+              <p style="margin:0 0 16px;color:#b91c1c;"><strong>Pour des raisons de sécurité, ne partagez jamais vos identifiants.</strong></p>
+              <p style="margin:0 0 0;">Cordialement,<br>STEG Internship Platform</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#eef2f7;padding:16px 24px;text-align:center;color:#6b7280;font-size:12px;">
+              Cet email est envoyé automatiquement par la plateforme STEG Internship. Merci de ne pas y répondre.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

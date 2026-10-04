@@ -1,0 +1,28 @@
+@import '../../../../scss/pages-shared';
+
+.preview-result {
+  margin-top: 16px;
+
+  h6 {
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+}
+
+.preview-content {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 0.8125rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+.btn-group-sm .btn {
+  padding: 4px 8px;
+}

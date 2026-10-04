@@ -1,0 +1,37 @@
+<nav class="pagination" aria-label="Pagination">
+  <button
+    type="button"
+    class="pagination__btn"
+    aria-label="Page précédente"
+    [disabled]="currentPage() <= 1"
+    (click)="go(currentPage() - 1)"
+  >
+    <app-icon name="chevron-left" />
+  </button>
+
+  @for (item of items(); track $index) {
+    @if (item === 'ellipsis') {
+      <span class="pagination__dots">&hellip;</span>
+    } @else {
+      <button
+        type="button"
+        class="pagination__btn"
+        [class.is-active]="item === currentPage()"
+        [attr.aria-current]="item === currentPage() ? 'page' : null"
+        (click)="go(item)"
+      >
+        {{ item }}
+      </button>
+    }
+  }
+
+  <button
+    type="button"
+    class="pagination__btn"
+    aria-label="Page suivante"
+    [disabled]="currentPage() >= totalPages()"
+    (click)="go(currentPage() + 1)"
+  >
+    <app-icon name="chevron-right" />
+  </button>
+</nav>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reminder — Your STEG human interview is today</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+          <tr>
+            <td style="background-color:#003366;padding:20px 24px;text-align:center;">
+              <span style="color:#ffffff;font-size:22px;font-weight:bold;">STEG Internship</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 24px;color:#333333;font-size:15px;line-height:1.6;">
+              <h1 style="margin:0 0 16px;font-size:20px;color:#003366;">Your human interview is today</h1>
+              <p style="margin:0 0 16px;">Hello {{nom}},</p>
+              <p style="margin:0 0 16px;">This is a reminder that your human interview for the internship position "{{titreOffre}}" is scheduled for today.</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;border-radius:6px;margin:0 0 16px;">
+                <tr>
+                  <td style="padding:16px;font-size:14px;line-height:1.7;">
+                    <strong>Date:</strong> {{date}}<br>
+                    <strong>Time:</strong> {{heure}}<br>
+                    <strong>Duration:</strong> {{duree}}<br>
+                    <strong>Interviewer:</strong><br>
+                    {{interviewer}}<br>
+                    {{#lienVisio}}<strong>Join the interview:</strong> <a href="{{lienVisio}}" style="color:#007bff;">{{lienVisio}}</a>{{/lienVisio}}
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 16px;">Please join the meeting a few minutes before the scheduled time.</p>
+              <p style="margin:0 0 0;">Best regards,<br>STEG Internship — Human Resources</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#eef2f7;padding:16px 24px;text-align:center;color:#6b7280;font-size:12px;">
+              This email is sent automatically by the STEG Internship platform. Please do not reply to it.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

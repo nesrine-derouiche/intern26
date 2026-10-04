@@ -1,0 +1,15 @@
+const express = require('express');
+const router = express.Router();
+const c = require('../controllers/stage.controller');
+const { authenticateToken: auth } = require('../middlewares/auth.middleware');
+const { requireRole: role } = require('../middlewares/role.middleware');
+const { withScope, authorizeResource } = require('../middlewares/authorization.middleware');
+const { enforceOnboardingAccess } = require('../middlewares/onboarding-access.middleware');
+const { updateStageValidation } = require('../validators/stage.validator');
+const { validate } = require('../validators');
+router.use(auth, withScope, enforceOnboardingAccess);
+router.get('/', c.getAll);
+router.post('/:id/complete', role('ENCADRANT', 'RH', 'ADMIN'), authorizeResource('stage'), c.complete);
+router.put('/:id', role('ADMIN', 'RH', 'ENCADRANT'), updateStageValidation, validate, authorizeResource('stage'), c.update);
+router.delete('/:id', role('ADMIN'), c.delete);
+module.exports = router;

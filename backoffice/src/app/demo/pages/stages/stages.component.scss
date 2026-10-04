@@ -1,0 +1,361 @@
+@import '../../../../scss/pages-shared';
+
+.stage-row {
+  cursor: pointer;
+}
+
+// ── Progress bar (table row) ────────────────────────────────────
+.progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.progress-track {
+  flex: 1;
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 600ms ease-out;
+}
+
+.progress-text {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 32px;
+  text-align: right;
+}
+
+// ── Detail panel (slide-out) ────────────────────────────────────
+.detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1040;
+  animation: fadeIn 200ms ease;
+}
+
+.detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 560px;
+  max-width: 95vw;
+  height: 100vh;
+  background: #fff;
+  z-index: 1050;
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  animation: slideInRight 250ms ease;
+}
+
+.detail-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+
+  h5 {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: #111827;
+  }
+}
+
+// ── Tabs ────────────────────────────────────────────────────────
+.detail-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all 150ms ease;
+
+  &:hover {
+    color: #5B5CEB;
+  }
+
+  &.active {
+    color: #5B5CEB;
+    border-bottom-color: #5B5CEB;
+  }
+}
+
+.detail-body {
+  padding: 0 24px 24px;
+}
+
+.detail-section {
+  padding: 20px 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  h6 {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+}
+
+.detail-progress {
+  .progress-track-lg {
+    height: 10px;
+    background: #f3f4f6;
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .progress-fill-lg {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 800ms ease-out;
+  }
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.detail-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .info-label {
+    font-size: 0.6875rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .info-value {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #111827;
+  }
+}
+
+// ── PDF actions ─────────────────────────────────────────────────
+.pdf-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .btn {
+    font-size: 0.8125rem;
+  }
+}
+
+// ── Task list (detail tab) ──────────────────────────────────────
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.task-list-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.task-status-badge {
+  &.en-cours       { background: #EDEDFE; color: #5B5CEB; }
+  &.termine        { background: #f0fdf4; color: #16a34a; }
+  &.en-attente     { background: #fff7ed; color: #ea580c; }
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+// ── Documents list ──────────────────────────────────────────────
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.doc-list-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.doc-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #EDEDFE;
+  color: #5B5CEB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+// ── Reunions list ───────────────────────────────────────────────
+.reunion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.reunion-list-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.reunion-date-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #EDEDFE;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .day {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #5B5CEB;
+    line-height: 1;
+  }
+
+  .month {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #5B5CEB;
+    text-transform: uppercase;
+  }
+}
+
+// ── Evaluation card ─────────────────────────────────────────────
+.eval-card {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.eval-criteria {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eval-criteria-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 60px;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8125rem;
+
+  span:first-child {
+    color: #6b7280;
+  }
+}
+
+.eval-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.eval-bar-fill {
+  height: 100%;
+  background: #5B5CEB;
+  border-radius: 100px;
+  transition: width 600ms ease-out;
+}
+
+// ── Animations ──────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+// ── Responsive ──────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .detail-panel {
+    width: 100vw;
+  }
+
+  .detail-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eval-criteria-row {
+    grid-template-columns: 90px 1fr 50px;
+    font-size: 0.75rem;
+  }
+
+  .pdf-actions {
+    flex-direction: column;
+
+    .btn { width: 100%; }
+  }
+}

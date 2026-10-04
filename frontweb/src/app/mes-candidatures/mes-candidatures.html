@@ -1,0 +1,64 @@
+<app-landing-header />
+
+<main class="page">
+  <section class="container page__head">
+    <h1 class="page__title">
+      <app-icon name="briefcase" />
+      Mes candidatures
+    </h1>
+    <p class="page__sub">Suivez l'avancement de vos candidatures et rejoignez vos entretiens.</p>
+  </section>
+
+  <section class="container">
+    @if (loading()) {
+      <div class="state">
+        <app-icon name="loader" />
+        Chargement de vos candidatures…
+      </div>
+    } @else if (error(); as message) {
+      <div class="state state--error" role="alert">
+        <app-icon name="alert-triangle" />
+        {{ message }}
+      </div>
+    } @else if (candidatures().length === 0) {
+      <div class="state">
+        <app-icon name="search" />
+        Aucune candidature pour le moment.
+      </div>
+    } @else {
+      <div class="list">
+        @for (c of candidatures(); track c.id) {
+          <article class="candidature">
+            <header class="candidature__head">
+              <div>
+                <h2 class="candidature__titre">{{ c.offre_titre }}</h2>
+                <p class="candidature__meta">
+                  <app-icon name="building" />
+                  {{ c.departement_nom }}
+                  · Postulée le {{ formatDate(c.date_candidature) }}
+                </p>
+              </div>
+              <span class="hi__badge" [class]="'hi__badge--' + statutTone(c.statut)">
+                {{ statutLabel(c.statut) }}
+              </span>
+            </header>
+            <app-human-interview-card [candidatureId]="c.id" />
+            @if (c.statut === 'HUMAN_INTERVIEW_ACCEPTED') {
+              <app-stage-preferences-card
+                [candidatureId]="c.id"
+                [startDate]="c.internship_start_date"
+                [durationMonths]="c.internship_duration_months"
+                [submittedAt]="c.internship_details_submitted_at"
+                [validatedAt]="c.internship_period_validated_at"
+                [modificationRequestedAt]="c.internship_modification_requested_at"
+                [mobileAccessSentAt]="c.mobile_access?.email_sent_at"
+              />
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+</main>
+
+<app-landing-footer />

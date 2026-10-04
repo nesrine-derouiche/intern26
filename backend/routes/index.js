@@ -1,0 +1,57 @@
+const express = require('express');
+const router = express.Router();
+const authRoutes = require('./auth.routes');
+const candidatRoutes = require('./candidat.routes');
+const publicRoutes = require('./public.routes');
+const departementRoutes = require('./departement.routes');
+const encadrantRoutes = require('./encadrant.routes');
+const stagiaireRoutes = require('./stagiaire.routes');
+const offreRoutes = require('./offre.routes');
+const candidatureRoutes = require('./candidature.routes');
+const aiInterviewRoutes = require('./ai-interview.routes');
+const aiInterviewEngineRoutes = require('./ai-interview-engine.routes');
+const stageRoutes = require('./stage.routes');
+const tacheRoutes = require('./tache.routes');
+const reunionRoutes = require('./reunion.routes');
+const evaluationRoutes = require('./evaluation.routes');
+const journalRoutes = require('./journal.routes');
+const notificationRoutes = require('./notification.routes');
+const personalTacheRoutes = require('./personal-tache.routes');
+const projetRoutes = require('./projet.routes');
+const rapportRoutes = require('./rapport.routes');
+const pointageRoutes = require('./pointage.routes');
+const planningRoutes = require('./planning.routes');
+
+const dashboardRoutes = require('./dashboard.routes');
+const searchRoutes = require('./search.routes');
+const documentRoutes = require('./document.routes');
+const pdfRoutes = require('./pdf.routes');
+const documentTemplateRoutes = require('./document-template.routes');
+
+router.use('/auth', authRoutes);
+router.use('/candidat', candidatRoutes);
+router.use('/public', publicRoutes);
+router.use('/departements', departementRoutes);
+router.use('/encadrants', encadrantRoutes);
+router.use('/stagiaires', stagiaireRoutes);
+router.use('/offres', offreRoutes);
+router.use('/candidatures', candidatureRoutes);
+router.use('/entretien-ia', aiInterviewRoutes);
+router.use('/ai-interviews', aiInterviewEngineRoutes);
+router.use('/stages', stageRoutes);
+router.use('/taches', tacheRoutes);
+router.use('/reunions', reunionRoutes);
+router.use('/evaluations', evaluationRoutes);
+router.use('/journals', journalRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/personal-taches', personalTacheRoutes);
+router.use('/projets', projetRoutes);
+router.use('/rapports', rapportRoutes);
+router.use('/pointages', pointageRoutes);
+router.use('/planning', planningRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/search', searchRoutes);
+router.use('/document-templates', documentTemplateRoutes);
+router.use('/', documentRoutes); // mounted at /api so /stages/:stageId/documents works
+router.use('/stages', pdfRoutes); // mounted at /api/stages so /:stageId/pdf/... works
+module.exports = router;

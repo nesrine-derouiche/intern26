@@ -1,0 +1,158 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Gestion des Encadrants</h4>
+      <p class="text-muted mb-0">Gérez les informations des encadrants/superviseurs</p>
+    </div>
+    <button class="btn btn-primary-custom" (click)="openAdd()">
+      <i class="ti ti-plus me-1"></i> Ajouter un encadrant
+    </button>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control" placeholder="Rechercher un encadrant..."
+            [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <span class="text-muted">{{ filtered().length }} encadrant(s)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Encadrant</th>
+            <th>Département / Service</th>
+            <th>Compétences</th>
+            <th class="text-center">Stagiaires Actifs / Max</th>
+            <th class="text-center">Disponibilité</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of filtered(); track e.id) {
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar avatar-sm bg-light-primary me-3">
+                  <span class="text-primary fw-bold">{{ e.prenom?.charAt(0) }}{{ e.nom?.charAt(0) }}</span>
+                </div>
+                <div>
+                  <h6 class="mb-0">{{ e.prenom }} {{ e.nom }}</h6>
+                  <small class="text-muted">{{ e.email }}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div>{{ e.departement_nom || 'Non assigné' }}</div>
+              <small class="text-muted">{{ e.service || '' }}</small>
+            </td>
+            <td><span class="text-muted small">{{ e.competences || '—' }}</span></td>
+            <td class="text-center">
+              <span class="badge bg-light-primary text-primary">{{ e.nb_stagiaires_actifs || 0 }} / {{ e.nombre_max_stagiaires || 3 }}</span>
+            </td>
+            <td class="text-center">
+              @if (e.disponibilite) {
+                <span class="badge bg-light-success text-success">Disponible</span>
+              } @else {
+                <span class="badge bg-light-danger text-danger">Indisponible</span>
+              }
+            </td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="openEdit(e)"><i class="ti ti-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(e.id)"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+          } @empty {
+          <tr><td colspan="6" class="text-center text-muted py-4">Aucun encadrant trouvé</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (showModal()) {
+<div class="modal-backdrop-custom" (click)="closeModal()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ editMode() ? "Modifier l'encadrant" : 'Ajouter un encadrant' }}</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nom *</label>
+            <input type="text" class="form-control" [(ngModel)]="form.nom" placeholder="Nom" />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Prénom *</label>
+            <input type="text" class="form-control" [(ngModel)]="form.prenom" placeholder="Prénom" />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email *</label>
+          <input type="email" class="form-control" [(ngModel)]="form.email" placeholder="email@steg.tn" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Téléphone</label>
+          <input type="text" class="form-control" [(ngModel)]="form.telephone" placeholder="+216 XX XXX XXX" />
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Service</label>
+            <input type="text" class="form-control" [(ngModel)]="form.service" placeholder="Service / Équipe..." />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Département</label>
+            <select class="form-select" [(ngModel)]="form.departement_id">
+              <option value="">Sélectionner un département</option>
+              @for (d of departements(); track d.id) {
+                <option [value]="d.id">{{ d.nom }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre max de stagiaires</label>
+            <input type="number" class="form-control" [(ngModel)]="form.nombre_max_stagiaires" min="0" />
+          </div>
+          <div class="col-md-6 mb-3 d-flex align-items-end pb-2">
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="dispoCheck" [(ngModel)]="form.disponibilite" />
+              <label class="form-check-label" for="dispoCheck">Disponible pour encadrement</label>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Compétences</label>
+          <textarea class="form-control" [(ngModel)]="form.competences" rows="2" placeholder="Angular, Python, Java, Réseaux..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="save()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          {{ editMode() ? 'Mettre à jour' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

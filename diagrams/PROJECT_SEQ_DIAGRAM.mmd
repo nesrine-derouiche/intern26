@@ -1,0 +1,548 @@
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% DIAGRAMMES DE SÉQUENCE — STEG Internship Platform
+%% Flux principaux du système
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+title Diagrammes de Séquence\nPlateforme STEG — Gestion des Stages
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 1 — AUTHENTIFICATION
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor Utilisateur as U
+participant "Frontweb /\nBackoffice" as FW
+participant "Backend\nExpress" as BE
+database "PostgreSQL" as DB
+participant "JWT Service" as JWT
+
+== Authentification ==
+
+U->>FW: Saisit email + mot de passe
+FW->>BE: POST /api/auth/login
+BE->>DB: SELECT * FROM utilisateur WHERE email = ?
+DB-->>BE: utilisateur record
+BE->>BE: bcrypt.compare(mot_de_passe, hash)
+BE->>JWT: jwt.sign({id, role, tokenVersion})
+JWT-->>BE: token + refreshToken
+BE->>DB: INSERT INTO notification (premier login)
+BE-->>FW: 200 {token, refreshToken, user}
+FW-->>U: Redirection tableau de bord selon rôle
+note over FW: Role-based routing:\nADMIN→backoffice\nSTAGIAIRE→frontweb mobile\nENCADRANT→backoffice\nCANDIDAT→frontweb portail
+
+== Vérification Email (Candidat) ==
+
+U->>FW: POST /api/auth/register-candidate
+FW->>BE: registerCandidate()
+BE->>DB: INSERT INTO utilisateur + candidat
+BE->>BE: Générer email_verification_token
+BE->>BE: SMTP → email de vérification
+BE-->>FW: 201 {userId}
+FW-->>U: "Vérifiez votre boîte email"
+U->>FW: Clique lien vérification
+FW->>BE: GET /api/auth/verify-email/:token
+BE->>DB: UPDATE utilisateur SET email_verifie = true
+BE-->>FW: 200 OK
+FW-->>U: Email vérifié, accès au portail
+
+== Mot de Passe Oublié ==
+
+U->>FW: POST /api/auth/forgot-password
+FW->>BE: generateResetToken()
+BE->>DB: UPDATE utilisateur SET reset_token = hash
+BE->>BE: SMTP → email réinitialisation
+BE-->>FW: 200 "Email envoyé"
+U->>FW: POST /api/auth/reset-password/:token
+FW->>BE: bcrypt.hash(newPassword)
+BE->>DB: UPDATE mot_de_passe, token_version++
+BE-->>FW: 200 OK
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 2 — PIPELINE CANDIDATURE (End-to-End)
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor Candidat as C
+participant "Frontweb" as FW
+participant "Backend" as BE
+database "PostgreSQL" as DB
+participant "AI Service\nPython" as AI
+participant "SMTP" as SMTP
+
+== Dépôt de Candidature ==
+
+C->>FW: Consulte les offres
+FW->>BE: GET /api/offers
+BE->>DB: SELECT * FROM offre_stage WHERE statut = 'OUVERTE'
+DB-->>BE: offres
+BE-->>FW: 200 [offres]
+FW-->>C: Affiche les offres
+
+C->>FW: Candidature + upload CV
+FW->>BE: POST /api/candidacies
+BE->>DB: INSERT INTO candidature (statut = 'EN_ATTENTE')
+BE->>DB: INSERT INTO candidature_document (CV)
+BE->>AI: POST /api/documents/verify (CV)
+AI->>AI: OCR + analyse du PDF
+AI-->>BE: {status: VALID, score: 85}
+BE->>DB: UPDATE candidature_document SET verification_status = 'VALID'
+BE->>DB: INSERT INTO cv_analyse
+BE->>SMTP: email "Candidature reçue"
+BE-->>FW: 201 {candidacyId}
+FW-->>C: "Candidature enregistrée"
+
+== Entretien IA (Texte) ==
+
+note over BE,C: Statut → EN_ENTRETIEN_IA
+BE->>DB: UPDATE candidature SET statut = 'EN_ENTRETIEN_IA'
+BE->>DB: INSERT INTO ai_interview_sessions (token, statut = 'EN_ATTENTE')
+BE->>SMTP: email "Passer l'entretien IA"
+
+C->>FW: Clique lien entretien IA
+FW->>BE: POST /api/ai-interview/:token/start
+BE->>AI: POST /engine/start
+AI->>AI: Générer 8 questions (4 catégories)
+AI-->>BE: {questions: [...]}
+BE->>DB: INSERT INTO ai_interview_questions × 8
+BE->>DB: UPDATE session SET statut = 'EN_COURS'
+BE-->>FW: 200 {questions}
+
+loop Pour chaque question (1..8)
+    C->>FW: Soumet réponse
+    FW->>BE: POST /api/ai-interview/:token/answer
+    BE->>DB: INSERT INTO ai_interview_answers
+    BE->>AI: POST /engine/answer {question, answer}
+    AI->>AI: Scoring par catégorie
+    AI-->>BE: {score: {technique: 7, communication: 8, ...}}
+end
+
+C->>FW: "Terminer l'entretien"
+FW->>BE: POST /api/ai-interview/:token/submit
+BE->>AI: POST /engine/evaluate
+AI->>AI: Calcul note_finale, integrity_check
+AI-->>BE: {evaluation: {note: 14.5, verdict: 'PASSED'}}
+BE->>DB: UPDATE session SET evaluation = {...}
+BE->>DB: UPDATE candidature SET statut = 'AI_INTERVIEW_PASSED'
+BE->>SMTP: email "Résultat entretien IA"
+BE-->>FW: 200 {evaluation}
+FW-->>C: Affiche résultat
+
+== Entretien IA Vocal ==
+
+C->>FW: Lance entretien vocal
+FW->>BE: POST /api/ai-interview-vocal/start
+BE->>AI: POST /v1/interview/start
+AI->>AI: TTS question 1
+AI-->>BE: {audio_url, question}
+BE->>DB: INSERT INTO ai_interviews
+BE-->>FW: 200 {audio_url}
+
+loop Pour chaque question
+    C->>FW: Enregistre réponse vocale
+    FW->>BE: POST /api/ai-interview-vocal/answer
+    BE->>AI: POST /v1/interview/answer {audio}
+    AI->>AI: STT → transcription → scoring
+    AI-->>BE: {transcript, score}
+end
+
+C->>FW: Terminer
+FW->>BE: POST /api/ai-interview-vocal/complete
+BE->>AI: POST /v1/interview/complete
+AI-->>BE: {report}
+BE->>DB: UPDATE candidature SET statut = 'AI_INTERVIEW_PASSED'
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 3 — VALIDATION RH & ENTRETIEN HUMAIN
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor RH as RH
+participant "Backoffice" as BO
+participant "Backend" as BE
+database "PostgreSQL" as DB
+participant "SMTP" as SMTP
+actor Candidat as C
+
+== Validation des Documents ==
+
+RH->>BO: Consulte candidatures
+BO->>BE: GET /api/candidacies?statut=AI_INTERVIEW_PASSED
+BE->>DB: SELECT candidatures
+BE-->>BO: 200 [candidatures]
+BO-->>RH: Affiche liste
+
+RH->>BO: Vérifie dossier
+BO->>BE: GET /api/candidacies/:id/documents
+BE->>DB: SELECT candidature_document
+BE-->>BO: 200 [documents]
+BO-->>RH: Affiche documents + statut vérification IA
+
+RH->>BO: Valide ou rejette document
+BO->>BE: PUT /api/candidacies/:id/documents/:docId/decision
+BE->>DB: UPDATE candidature_document SET statut = 'VALIDE'/'REJETE'
+BE->>DB: INSERT INTO candidature_decisions (audit trail)
+BE->>SMTP: email notification candidat
+BE-->>BO: 200 OK
+
+== Planification Entretien Humain ==
+
+RH->>BO: Planifier entretien humain
+BO->>BE: POST /api/candidacies/:id/schedule-human-interview
+BE->>DB: INSERT INTO human_interviews
+BE->>DB: UPDATE candidature SET statut = 'EN_ENTRETIEN_HUMAIN'
+BE->>SMTP: email entretien humain (candidat)
+BE->>SMTP: email entretien humain (encadrant)
+BE-->>BO: 200 OK
+
+== Entretien Humain ==
+
+RH->>BO: Marquer entretien terminé
+BO->>BE: POST /api/candidacies/:id/complete-human-interview
+BE->>DB: UPDATE human_interviews SET statut = 'TERMINE'
+BE->>DB: UPDATE candidature SET statut = 'HUMAN_INTERVIEW_COMPLETED'
+BE-->>BO: 200 OK
+
+== Décision Finale RH ==
+
+RH->>BO: Accepter candidature
+BO->>BE: POST /api/candidacies/:id/decision
+BE->>DB: UPDATE candidature SET statut = 'ACCEPTEE'
+BE->>DB: INSERT INTO candidature_decisions
+BE->>DB: INSERT INTO notification
+BE->>SMTP: email "Candidature acceptée"
+BE-->>BO: 200 OK
+BO-->>RH: Confirmation
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 4 — CRÉATION STAGE & ONBOARDING MOBILE
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor RH as RH
+participant "Backoffice" as BO
+participant "Backend" as BE
+database "PostgreSQL" as DB
+participant "SMTP" as SMTP
+actor Stagiaire as STG
+
+== Préférences de Stage ==
+
+RH->>BO: Accepte candidature
+BO->>BE: POST /api/candidacies/:id/accept
+BE->>DB: UPDATE candidature SET statut = 'HUMAN_INTERVIEW_ACCEPTED'
+BE-->>BO: 200 OK
+BO-->>RH: "Candidat doit choisir ses préférences"
+
+C->>FW: Soumet préférences
+FW->>BE: POST /api/candidacies/:id/internship-details
+BE->>DB: UPDATE candidature SET internship_start_date, internship_duration_months
+BE-->>FW: 200 OK
+
+== Validation Période ==
+
+RH->>BO: Valider la période
+BO->>BE: POST /api/candidacies/:id/validate-period
+BE->>DB: UPDATE candidature SET internship_period_validated_at = now()
+BE->>SMTP: email "Période validée"
+BE->>SMTP: email credentials mobile (si applicable)
+BE-->>BO: 200 OK
+
+== Création du Stage ==
+
+RH->>BO: Créer le stage
+BO->>BE: POST /api/stages
+BE->>DB: INSERT INTO stage (date_debut, date_fin, statut = 'EN_COURS')
+BE->>DB: INSERT INTO projet (stage_id)
+BE->>DB: UPDATE candidature SET statut = 'STAGIAIRE_CREATED'
+BE->>DB: INSERT INTO notification (stagiaire, encadrant, chef)
+BE->>SMTP: email stage créé
+BE-->>BO: 200 {stageId}
+BO-->>RH: Stage créé
+
+== Affectation Mobile ==
+
+note over BE,STG: Le stagiaire reçoit email avec credentials Flutter
+BE->>SMTP: email "Votre accès mobile"
+BE->>DB: UPDATE candidature SET mobile_access_email_sent_at = now()
+
+STG->>STG: Télécharge app Flutter
+STG->>BE: POST /api/mobile/login
+BE->>BE: Valide credentials chiffrés
+BE->>JWT: jwt.sign({id, role: 'STAGIAIRE'})
+BE-->>STG: 200 {token}
+STG->>BE: GET /api/mobile/dashboard
+BE->>DB: SELECT stage, taches, notifications
+BE-->>STG: 200 {dashboard}
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 5 — GESTION DES TÂCHES (ENCADRANT → STAGIAIRE)
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor Encadrant as ENC
+participant "Backoffice" as BO
+participant "Backend" as BE
+database "PostgreSQL" as DB
+actor Stagiaire as STG
+participant "Mobile" as MOB
+
+== Création de Tâche ==
+
+ENC->>BO: Créer tâche pour stagiaire
+BO->>BE: POST /api/tasks
+BE->>DB: INSERT INTO tache (createur_id, executant_id, statut = 'A_FAIRE')
+BE->>DB: UPDATE projet SET avancement = ...
+BE->>DB: INSERT INTO notification (stagiaire)
+BE-->>BO: 200 {taskId}
+BO-->>ENC: Tâche créée
+
+== Suivi d'Avancement ==
+
+STG->>MOB: Ouvre Kanban des tâches
+MOB->>BE: GET /api/tasks?stageId=:id
+BE->>DB: SELECT * FROM tache WHERE executant_id = ?
+BE-->>MOB: 200 [taches]
+MOB-->>STG: Affiche colonnes A_FAIRE / EN_COURS / TERMINEE
+
+STG->>MOB: Déplace tâche A_FAIRE → EN_COURS
+MOB->>BE: PUT /api/tasks/:id/status
+BE->>DB: UPDATE tache SET statut = 'EN_COURS'
+BE->>DB: INSERT INTO notification (encadrant)
+BE-->>MOB: 200 OK
+
+STG->>MOB: Déplace tâche EN_COURS → TERMINEE + completion_date
+MOB->>BE: PUT /api/tasks/:id/status
+BE->>DB: UPDATE tache SET statut = 'TERMINEE', completion_date = now()
+BE->>DB: UPDATE projet SET avancement = recalculé
+BE->>DB: INSERT INTO notification (encadrant)
+BE-->>MOB: 200 OK
+
+== Évaluation par l'Encadrant ==
+
+ENC->>BO: Évaluer le stagiaire
+BO->>BE: POST /api/evaluations
+BE->>DB: INSERT INTO evaluation (technique, communication, autonomie, ponctualite, qualite)
+BE->>DB: INSERT INTO notification (stagiaire, chef)
+BE-->>BO: 200 {evaluationId}
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 6 — TÂCHES PERSONNELLES DU STAGIAIRE (KANBAN TRELLO)
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor Stagiaire as STG
+participant "Mobile" as MOB
+participant "Backend" as BE
+database "PostgreSQL" as DB
+
+== Chargement du Board ==
+
+STG->>MOB: Ouvre écran "Mes Tâches"
+MOB->>BE: GET /api/personal-taches
+BE->>DB: SELECT * FROM tache_personnelle WHERE stagiaire_id = ? ORDER BY statut, position
+BE-->>MOB: 200 [{taches: [...]}]
+MOB-->>STG: Affiche 2 sections :\n1) Tâches encadrant (lecture seule)\n2) Trello board (4 colonnes)
+
+== Création d'une Tâche Personnelle ==
+
+STG->>MOB: Appuie "+"
+MOB->>MOB: Affiche BottomSheet (titre, description, priorité, date échéance)
+STG->>MOB: Remplit le formulaire
+MOB->>BE: POST /api/personal-taches
+BE->>DB: INSERT INTO tache_personnelle (stagiaire_id, titre, description, priorite, date_echeance, position)
+BE-->>MOB: 201 {tache}
+MOB-->>STG: Tâche ajoutée dans "À faire"
+
+== Déplacement par Drag & Drop ==
+
+STG->>MOB: Long-press sur carte tâche
+MOB->>MOB: Affiche bordure dorée + élévation (LongPressDraggable)
+STG->>MOB: Glisse vers colonne "En cours"
+MOB->>MOB: DragTarget.onAccept → appelle _onDrop()
+MOB->>BE: PUT /api/personal-taches/:id/move {statut: 'EN_COURS', position: 0}
+BE->>DB: BEGIN
+BE->>DB: UPDATE tache_personnelle SET statut = 'EN_COURS', position = 0
+BE->>DB: RENUMBER positions dans colonne cible
+BE->>DB: RENUMBER positions dans colonne source
+BE->>DB: COMMIT
+BE-->>MOB: 200 {tache}
+MOB-->>STG: Tâche déplacée, icône colonne mise à jour
+
+== Modification d'une Tâche ==
+
+STG->>MOB: Long-press sur carte → édite
+MOB->>MOB: Affiche BottomSheet pré-rempli
+STG->>MOB: Modifie titre/priorité
+MOB->>BE: PUT /api/personal-taches/:id
+BE->>DB: UPDATE tache_personnelle SET titre = ?, priorite = ?
+BE-->>MOB: 200 {tache}
+MOB-->>STG: Tâche mise à jour
+
+== Suppression d'une Tâche ==
+
+STG->>MOB: Swipe gauche sur carte → Supprimer
+MOB->>MOB: Affiche confirmation dialog
+STG->>MOB: Confirme
+MOB->>BE: DELETE /api/personal-taches/:id
+BE->>DB: DELETE FROM tache_personnelle WHERE id = ?
+BE-->>MOB: 204
+MOB-->>STG: Tâche supprimée
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 7 — GESTION DES RAPPORTS & JOURNAUX
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor Stagiaire as STG
+participant "Frontweb" as FW
+participant "Backend" as BE
+database "PostgreSQL" as DB
+actor Encadrant as ENC
+participant "Backoffice" as BO
+
+== Soumission de Journal ==
+
+STG->>FW: Rédige journal hebdomadaire
+FW->>BE: POST /api/journals
+BE->>DB: INSERT INTO journal (statut = 'BROUILLON')
+BE-->>FW: 200 {journalId}
+FW-->>STG: Journal sauvegardé
+
+STG->>FW: Soumet le journal
+FW->>BE: PUT /api/journals/:id/submit
+BE->>DB: UPDATE journal SET statut = 'SOUMIS'
+BE->>DB: INSERT INTO notification (encadrant)
+BE-->>FW: 200 OK
+
+ENC->>BO: Consulte journaux
+BO->>BE: GET /api/journals?stageId=:id
+BE->>DB: SELECT journals
+BE-->>BO: 200 [journaux]
+BO-->>ENC: Affiche journaux
+
+ENC->>BO: Valide le journal
+BO->>BE: PUT /api/journals/:id/validate
+BE->>DB: UPDATE journal SET statut = 'VALIDE'
+BE->>DB: INSERT INTO notification (stagiaire)
+BE-->>BO: 200 OK
+
+== Soumission de Rapport ==
+
+STG->>FW: Soumet rapport intermédiaire / final
+FW->>BE: POST /api/reports
+BE->>DB: INSERT INTO rapport (type, contenu, statut = 'SOUMIS')
+BE->>DB: INSERT INTO notification (encadrant, chef)
+BE-->>FW: 200 {rapportId}
+FW-->>STG: Rapport soumis
+
+ENC->>BO: Révise le rapport
+BO->>BE: PUT /api/reports/:id/review
+BE->>DB: UPDATE rapport SET statut = 'VALIDE', commentaire = ?
+BE->>DB: INSERT INTO notification (stagiaire)
+BE-->>BO: 200 OK
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 8 — GESTION DES OFFRES DE STAGE
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor "Chef Département" as CHEF
+participant "Backoffice" as BO
+participant "Backend" as BE
+database "PostgreSQL" as DB
+actor Encadrant as ENC
+participant "Frontweb" as FW
+actor Candidat as C
+
+CHEF->>BO: Créer une offre de stage
+BO->>BE: POST /api/offers
+BE->>DB: INSERT INTO offre_stage (departement_id, statut = 'OUVERTE')
+BE->>DB: INSERT INTO notification (RH, admin)
+BE-->>BO: 200 {offerId}
+BO-->>CHEF: Offre créée
+
+CHEF->>BO: Assigner un encadrant
+BO->>BE: PUT /api/offers/:id/assign
+BE->>DB: UPDATE offre_stage SET encadrant_id = ?
+BE->>DB: INSERT INTO notification (encadrant)
+BE-->>BO: 200 OK
+
+ENC->>BO: Consulte offres assignées
+BO->>BE: GET /api/offers?encadrantId=:id
+BE->>DB: SELECT offres
+BE-->>BO: 200 [offres]
+
+C->>FW: Consulte les offres (portail public)
+FW->>BE: GET /api/offers?public=true&statut=OUVERTE
+BE->>DB: SELECT offres OUVERTES
+BE-->>FW: 200 [offres]
+FW-->>C: Affiche offres
+
+CHEF->>BO: Ferme une offre
+BO->>BE: PUT /api/offers/:id/close
+BE->>DB: UPDATE offre_stage SET statut = 'FERMEE'
+BE-->>BO: 200 OK
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 9 — SYSTÈME DE NOTIFICATIONS
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+participant "Backend" as BE
+database "PostgreSQL" as DB
+participant "Firebase" as FB
+participant "SMTP" as SMTP
+actor "Utilisateur" as U
+participant "Mobile" as MOB
+
+== Notification Push (Mobile) ==
+
+U->>MOB: Enregistre device token
+MOB->>BE: POST /api/notifications/register-device
+BE->>DB: INSERT INTO device_token (utilisateur_id, token, platform)
+BE-->>MOB: 200 OK
+
+BE->>BE: Événement déclencheur (candidature, tâche, etc.)
+BE->>DB: INSERT INTO notification (utilisateur_id, titre, message)
+BE->>FB: FCM.send(deviceToken, {title, body})
+FB-->>U: Notification push sur téléphone
+
+== Notification Email ==
+
+BE->>SMTP: SMTP.send(to, template, data)
+SMTP-->>U: Email (confirmation, entretien, décision)
+
+== Notification In-App ==
+
+U->>MOB: Ouvre le dashboard
+MOB->>BE: GET /api/notifications
+BE->>DB: SELECT * FROM notification WHERE lue = false
+BE-->>MOB: 200 [notifications]
+MOB-->>U: Badge + liste notifications
+
+U->>MOB: Marquer comme lue
+MOB->>BE: PUT /api/notifications/:id/read
+BE->>DB: UPDATE notification SET lue = true
+BE-->>MOB: 200 OK
+
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% SEQ 10 — ENTRETIEN EXPRESS HUMAIN (Raccourci Backend)
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+actor "RH" as RH
+participant "Backoffice" as BO
+participant "Backend" as BE
+database "PostgreSQL" as DB
+participant "SMTP" as SMTP
+actor "Encadrant" as ENC
+
+RH->>BO: Bouton "Entretien Express"
+BO->>BE: POST /api/candidacies/:id/schedule-express-human-interview
+BE->>DB: INSERT INTO human_interviews (interviewer = 'Encadrant désigné', statut = 'PLANIFIE')
+BE->>DB: UPDATE candidature SET statut = 'EN_ENTRETIEN_HUMAIN'
+BE->>SMTP: email "Entretien express planifié" (encadrant)
+BE->>SMTP: email "Entretien express planifié" (candidat)
+BE->>DB: INSERT INTO notification (RH, encadrant, candidat)
+BE-->>BO: 200 {humanInterviewId}
+BO-->>RH: Entretien planifié
+note over RH: L'encadrant reçoit un email\navec les détails de l'entretien

@@ -1,0 +1,282 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Gestion des Templates</h4>
+      <p class="text-muted mb-0">Gérez les modèles de documents générés par le système</p>
+    </div>
+    <button class="btn btn-primary-custom" (click)="openCreate()" [disabled]="!isAdminOrRh">
+      <i class="ti ti-plus me-1"></i> Nouveau template
+    </button>
+  </div>
+</div>
+
+@if (!isAdminOrRh) {
+<div class="card">
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon"><i class="ti ti-lock"></i></div>
+      <h5>Accès refusé</h5>
+      <p>{{ error() }}</p>
+    </div>
+  </div>
+</div>
+} @else {
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center g-3">
+      <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control" placeholder="Rechercher un template..."
+            [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" [ngModel]="filterType()" (ngModelChange)="setFilterType($event)">
+          <option value="">Tous les types</option>
+          @for (t of TYPES; track t) {
+          <option [value]="t">{{ t }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" [ngModel]="filterActif()" (ngModelChange)="setFilterActif($event)">
+          <option value="">Tous les statuts</option>
+          <option [value]="true">Actif</option>
+          <option [value]="false">Inactif</option>
+        </select>
+      </div>
+      <div class="col-md-3 text-end">
+        <button class="btn btn-sm btn-outline-secondary me-2" (click)="resetFilters()">
+          <i class="ti ti-refresh me-1"></i> Réinitialiser
+        </button>
+        <span class="text-muted small">{{ filtered().length }} template(s)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+      <p class="mt-2 text-muted">Chargement…</p>
+    </div>
+    } @else if (error()) {
+    <div class="empty-state">
+      <div class="empty-icon"><i class="ti ti-alert-triangle text-danger"></i></div>
+      <h5>Erreur</h5>
+      <p>{{ error() }}</p>
+    </div>
+    } @else if (templates().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon"><i class="ti ti-file-text"></i></div>
+      <h5>Aucun template trouvé</h5>
+      <p>Créez votre premier template de document</p>
+    </div>
+    } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Type</th>
+            <th>Version</th>
+            <th>Actif</th>
+            <th>Variables</th>
+            <th>Mis à jour</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of filtered(); track t.id) {
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar avatar-sm">
+                  <i class="ti ti-file-text"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0">{{ t.nom }}</h6>
+                  <small class="text-muted">{{ t.contenu | slice:0:50 }}{{ t.contenu.length > 50 ? '…' : '' }}</small>
+                </div>
+              </div>
+            </td>
+            <td><span [class]="getTypeBadge(t.type)">{{ t.type }}</span></td>
+            <td><span class="badge bg-light text-dark">v{{ t.version }}</span></td>
+            <td>
+              @if (t.actif) {
+              <span class="badge bg-success">Actif</span>
+              } @else {
+              <span class="badge bg-secondary">Inactif</span>
+              }
+            </td>
+            <td>
+              <small class="text-muted">{{ variablesDisplay(t) }}</small>
+            </td>
+            <td>
+              <small class="text-muted">{{ t.updated_at | date:'dd/MM/yyyy HH:mm' }}</small>
+            </td>
+            <td class="text-center">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" title="Aperçu" (click)="openPreview(t)">
+                  <i class="ti ti-eye"></i>
+                </button>
+                <button class="btn btn-outline-secondary" title="Modifier" (click)="openEdit(t)">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                @if (t.actif) {
+                <button class="btn btn-outline-warning" title="Désactiver" (click)="openDeactivate(t)">
+                  <i class="ti ti-toggle-left"></i>
+                </button>
+                }
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (pages() > 1) {
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3">
+      <small class="text-muted">{{ total() }} template(s) · Page {{ page() }} sur {{ pages() }}</small>
+      <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">
+          <i class="ti ti-chevron-left me-1"></i>Précédent
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="page() >= pages()" (click)="goToPage(page() + 1)">
+          Suivant<i class="ti ti-chevron-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+    }
+    }
+  </div>
+</div>
+
+}
+
+@if (showForm()) {
+<div class="modal-backdrop-custom" (click)="closeForm()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ editMode() ? 'Modifier le template' : 'Nouveau template' }}</h5>
+        <button type="button" class="btn-close" (click)="closeForm()"></button>
+      </div>
+      <div class="modal-body">
+        @if (formError()) { <div class="alert alert-danger">{{ formError() }}</div> }
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nom *</label>
+            <input type="text" class="form-control" [(ngModel)]="form.nom" placeholder="Nom du template" />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Type *</label>
+            @if (!editMode()) {
+            <select class="form-select" [(ngModel)]="form.type">
+              <option value="">Sélectionner un type</option>
+              @for (t of TYPES; track t) {
+              <option [value]="t">{{ t }}</option>
+              }
+            </select>
+            } @else {
+            <input type="text" class="form-control" [value]="form.type" disabled />
+            <small class="text-muted">Le type ne peut pas être modifié après la création.</small>
+            }
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Contenu *</label>
+          <textarea class="form-control" rows="6" [(ngModel)]="form.contenu"
+            [placeholder]="contenuPlaceholder"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Variables (séparées par des virgules)</label>
+          <input type="text" class="form-control" [(ngModel)]="form.variables"
+            placeholder="stagiaire_prenom, stagiaire_nom, date_debut" />
+          <small class="text-muted">Variables disponibles : stagiaire_prenom, stagiaire_nom, stagiaire_email, encadrant_prenom, encadrant_nom, encadrant_email, departement_nom, offre_titre, offre_desc, date_debut, date_fin, statut</small>
+        </div>
+        @if (editMode()) {
+        <div class="mb-3">
+          <label class="form-label">Version</label>
+          <input type="text" class="form-control" [value]="'v' + (editingTemplate()?.version ?? '')" disabled />
+          <small class="text-muted">La version est gérée automatiquement par le système</small>
+        </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeForm()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="saveForm()" [disabled]="formLoading()">
+          @if (formLoading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          {{ editMode() ? 'Mettre à jour' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+@if (showPreview()) {
+<div class="modal-backdrop-custom" (click)="closePreview()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Aperçu du template</h5>
+        <button type="button" class="btn-close" (click)="closePreview()"></button>
+      </div>
+      <div class="modal-body">
+        @if (previewError()) { <div class="alert alert-danger">{{ previewError() }}</div> }
+        <div class="mb-3">
+          <label class="form-label">Données de test (une variable par ligne, format: nom=valeur)</label>
+          <textarea class="form-control" rows="4" [(ngModel)]="previewDataRaw"
+            placeholder="stagiaire_prenom=Ali&#10;stagiaire_nom=Ben"></textarea>
+        </div>
+        <button class="btn btn-primary-custom btn-sm mb-3" (click)="loadPreview()" [disabled]="previewLoading()">
+          @if (previewLoading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Générer l'aperçu
+        </button>
+        @if (previewContent()) {
+        <div class="preview-result">
+          <h6>Résultat :</h6>
+          <pre class="preview-content">{{ previewContent() }}</pre>
+        </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closePreview()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+@if (showDeactivateConfirm()) {
+<div class="modal-backdrop-custom"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmer la désactivation</h5>
+        <button type="button" class="btn-close" (click)="cancelDeactivate()"></button>
+      </div>
+      <div class="modal-body">
+        <p>Voulez-vous désactiver le template <strong>{{ deactivateTarget()?.nom }}</strong> ?</p>
+        <p class="text-muted small">Les documents déjà générés ne seront pas affectés.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelDeactivate()">Annuler</button>
+        <button type="button" class="btn btn-warning" (click)="confirmDeactivate()" [disabled]="deactivateLoading()">
+          @if (deactivateLoading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Désactiver
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

@@ -1,0 +1,117 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Départements</h4>
+      <p class="text-muted mb-0">Gérez les départements de l'entreprise</p>
+    </div>
+    <button class="btn btn-primary-custom" (click)="openAdd()">
+      <i class="ti ti-plus me-1"></i> Nouveau département
+    </button>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control" placeholder="Rechercher un département..."
+            [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <span class="text-muted">{{ filtered().length }} département(s)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  @for (d of filtered(); track d.id) {
+  <div class="col-md-6 col-xl-4 mb-4">
+    <div class="card h-100 dept-card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="mb-1">{{ d.nom }}</h5>
+            @if (d.chef_nom) {
+              <small class="text-muted"><i class="ti ti-crown me-1 text-warning"></i>{{ d.chef_prenom }} {{ d.chef_nom }}</small>
+            } @else {
+              <small class="text-muted">Aucun chef désigné</small>
+            }
+          </div>
+          <div>
+            <button class="btn btn-sm btn-outline-primary me-1" (click)="openEdit(d)"><i class="ti ti-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" (click)="delete(d.id)"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+        @if (d.description) {
+          <p class="text-muted small mb-3">{{ d.description }}</p>
+        }
+        <div class="dept-stats">
+          <div class="d-flex align-items-center mb-2">
+            <i class="ti ti-users text-primary me-2"></i>
+            <span>{{ d.nb_encadrants }} encadrant(s)</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <i class="ti ti-school text-success me-2"></i>
+            <span>{{ d.nb_stages_actifs }} stage(s) actif(s)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  } @empty {
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="ti ti-building f-48 text-muted mb-3 d-block"></i>
+        <h5 class="text-muted">Aucun département trouvé</h5>
+        <p class="text-muted">Créez un nouveau département pour commencer</p>
+      </div>
+    </div>
+  </div>
+  }
+</div>
+
+@if (showModal()) {
+<div class="modal-backdrop-custom" (click)="closeModal()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ editMode() ? 'Modifier le département' : 'Nouveau département' }}</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+        <div class="mb-3">
+          <label class="form-label">Nom *</label>
+          <input type="text" class="form-control" [(ngModel)]="form.nom" placeholder="Nom du département" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" [(ngModel)]="form.description" rows="3" placeholder="Description du département"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Chef de département</label>
+          <select class="form-select" [(ngModel)]="form.chef_departement_id">
+            <option value="">Aucun chef</option>
+            @for (e of encadrants(); track e.id) {
+            <option [value]="e.id">{{ e.prenom }} {{ e.nom }} ({{ e.departement_nom || 'Sans département' }})</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="save()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          {{ editMode() ? 'Mettre à jour' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

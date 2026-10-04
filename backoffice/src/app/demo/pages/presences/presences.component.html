@@ -1,0 +1,483 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Présences</h4>
+      <p class="text-muted mb-0">Suivi des pointages, des retards et des horaires des stagiaires</p>
+    </div>
+    <div class="btn-group" role="group" aria-label="Vue">
+      <button type="button" class="btn btn-sm" [class.btn-primary-custom]="view() === 'presences'" [class.btn-outline-secondary]="view() !== 'presences'" (click)="setView('presences')">
+        <i class="ti ti-list me-1"></i>Toutes les présences
+      </button>
+      <button type="button" class="btn btn-sm" [class.btn-primary-custom]="view() === 'retards'" [class.btn-outline-secondary]="view() !== 'retards'" (click)="setView('retards')">
+        <i class="ti ti-clock me-1"></i>Retards
+      </button>
+    </div>
+  </div>
+</div>
+
+@if (success()) {
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  <i class="ti ti-circle-check me-1"></i>{{ success() }}
+  <button type="button" class="btn-close" (click)="success.set('')" aria-label="Fermer"></button>
+</div>
+}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-primary-light"><i class="ti ti-calendar-time"></i></div>
+        <div><h6>Total</h6><p>{{ globalTotal() }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-success-light"><i class="ti ti-check"></i></div>
+        <div><h6>Présents</h6><p>{{ globalPresents() }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-warning-light"><i class="ti ti-clock"></i></div>
+        <div><h6>Retards</h6><p>{{ globalRetards() }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-danger-light"><i class="ti ti-x"></i></div>
+        <div><h6>Absents</h6><p>{{ globalAbsents() }}</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Date début</label>
+        <input type="date" class="form-control" [ngModel]="fDateDebut()" (ngModelChange)="fDateDebut.set($event)" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Date fin</label>
+        <input type="date" class="form-control" [ngModel]="fDateFin()" (ngModelChange)="fDateFin.set($event)" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Stagiaire</label>
+        <select class="form-select" [ngModel]="fStageId()" (ngModelChange)="fStageId.set($event)">
+          <option value="">Tous les stagiaires</option>
+          @for (opt of stagiaireOptions(); track opt.stageId) {
+          <option [value]="opt.stageId">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Stage</label>
+        <select class="form-select" [ngModel]="fStageId()" (ngModelChange)="fStageId.set($event)">
+          <option value="">Tous les stages</option>
+          @for (s of stages(); track s.id) {
+          <option [value]="s.id">{{ s.stagiaire_prenom }} {{ s.stagiaire_nom }} — {{ s.departement_nom }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Statut</label>
+        <select class="form-select" [ngModel]="fStatut()" (ngModelChange)="fStatut.set($event)" [disabled]="fRetardsOnly()">
+          <option value="TOUS">Tous</option>
+          <option value="PRESENT">Présent</option>
+          <option value="RETARD">Retard</option>
+          <option value="ABSENT">Absent</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" id="retardsOnly" [ngModel]="fRetardsOnly()" (ngModelChange)="fRetardsOnly.set($event)" />
+          <label class="form-check-label" for="retardsOnly">Retards uniquement</label>
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <button type="button" class="btn btn-outline-secondary me-2" (click)="resetFilters()">
+          <i class="ti ti-refresh me-1"></i>Réinitialiser
+        </button>
+        <button type="button" class="btn btn-primary-custom" (click)="applyFilters()">
+          <i class="ti ti-search me-1"></i>Rechercher
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    @if (error()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+      <span><i class="ti ti-alert-circle me-1"></i>{{ error() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="load()">Réessayer</button>
+    </div>
+    }
+
+    <div class="table-responsive">
+      @if (view() === 'presences') {
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Stagiaire</th>
+            <th>Stage</th>
+            <th>Entrée</th>
+            <th>Sortie</th>
+            <th>Durée</th>
+            <th>Retard</th>
+            <th>Statut</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+          <tr>
+            <td colspan="9" class="text-center text-muted py-5">
+              <span class="spinner-border spinner-border-sm me-2"></span>Chargement des présences...
+            </td>
+          </tr>
+          } @else {
+            @for (p of pointages(); track p.id) {
+            <tr>
+              <td>{{ formatDatePointage(p.date_pointage) }}</td>
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="avatar avatar-sm me-2">{{ initials(p) }}</div>
+                  <div>
+                    <h6 class="mb-0">{{ p.stagiaire_prenom }} {{ p.stagiaire_nom }}</h6>
+                    @if (p.encadrant_prenom || p.encadrant_nom) {
+                    <small class="text-muted">Enc. {{ p.encadrant_prenom }} {{ p.encadrant_nom }}</small>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>{{ stageLabel(p) }}</td>
+              <td>{{ formatHeure(p.heure_entree) }}</td>
+              <td>{{ formatHeure(p.heure_sortie) }}</td>
+              <td>{{ formatDuree(p.duree_minutes) }}</td>
+              <td>
+                @if (p.retard_minutes > 0) {
+                <span class="badge bg-danger">{{ formatRetard(p.retard_minutes) }}</span>
+                } @else {
+                <span class="text-muted">—</span>
+                }
+              </td>
+              <td><span [class]="statutBadge(p.statut)">{{ statutLabel(p.statut) }}</span></td>
+              <td class="text-center">
+                @if (canCorrect) {
+                <button type="button" class="btn btn-sm btn-outline-primary" title="Corriger la présence" (click)="openCorrection(p)">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                } @else {
+                <span class="text-muted">—</span>
+                }
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="9" class="text-center text-muted py-4">Aucune présence trouvée</td>
+            </tr>
+            }
+          }
+        </tbody>
+      </table>
+      } @else {
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Stagiaire</th>
+            <th>Date</th>
+            <th>Heure prévue</th>
+            <th>Heure réelle</th>
+            <th>Retard</th>
+            <th>Stage</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+          <tr>
+            <td colspan="7" class="text-center text-muted py-5">
+              <span class="spinner-border spinner-border-sm me-2"></span>Chargement des retards...
+            </td>
+          </tr>
+          } @else {
+            @for (p of pointages(); track p.id) {
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="avatar avatar-sm me-2">{{ initials(p) }}</div>
+                  <h6 class="mb-0">{{ p.stagiaire_prenom }} {{ p.stagiaire_nom }}</h6>
+                </div>
+              </td>
+              <td>{{ formatDatePointage(p.date_pointage) }}</td>
+              <td>{{ heurePrevue(p) }}</td>
+              <td>{{ formatHeure(p.heure_entree) }}</td>
+              <td><span class="badge bg-danger">{{ formatRetard(p.retard_minutes) }}</span></td>
+              <td>{{ stageLabel(p) }}</td>
+              <td class="text-center">
+                @if (canCorrect) {
+                <button type="button" class="btn btn-sm btn-outline-primary" title="Corriger la présence" (click)="openCorrection(p)">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                } @else {
+                <span class="text-muted">—</span>
+                }
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">Aucun retard enregistré sur cette période</td>
+            </tr>
+            }
+          }
+        </tbody>
+      </table>
+      }
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3">
+      <small class="text-muted">{{ total() }} résultat(s) · Page {{ page() }} sur {{ pages() || 1 }}</small>
+      <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="page() <= 1 || loading()" (click)="goToPage(page() - 1)">
+          <i class="ti ti-chevron-left me-1"></i>Précédent
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="page() >= pages() || loading()" (click)="goToPage(page() + 1)">
+          Suivant<i class="ti ti-chevron-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+      <div>
+        <h6 class="mb-1">Horaires & statistiques du stage</h6>
+        <p class="text-muted small mb-0">Sélectionnez un stage pour consulter ses horaires et ses statistiques de présence</p>
+      </div>
+      <div style="min-width: 280px">
+        <select class="form-select" [ngModel]="detailStageId()" (ngModelChange)="onDetailStageChange($event)">
+          <option value="">Sélectionner un stage</option>
+          @for (s of stages(); track s.id) {
+          <option [value]="s.id">{{ s.stagiaire_prenom }} {{ s.stagiaire_nom }} — {{ s.departement_nom }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (detailLoading()) {
+    <div class="text-center text-muted py-4">
+      <span class="spinner-border spinner-border-sm me-2"></span>Chargement...
+    </div>
+    } @else if (detailError()) {
+    <div class="alert alert-danger mb-0">{{ detailError() }}</div>
+    } @else if (!detailStageId()) {
+    <div class="empty-state py-3">
+      <i class="ti ti-calendar-time empty-icon"></i>
+      <h5>Aucun stage sélectionné</h5>
+      <p>Choisissez un stage pour afficher ses horaires et ses statistiques.</p>
+    </div>
+    } @else {
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">Horaires du stage</h6>
+              @if (canManageHoraires && horaire()) {
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="openHoraireEdit()">
+                <i class="ti ti-pencil me-1"></i>Modifier les horaires
+              </button>
+              }
+            </div>
+            @if (horaire()) {
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <span class="text-muted">Heure de début</span>
+              <strong>{{ horaire()!.heure_debut }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <span class="text-muted">Heure de fin</span>
+              <strong>{{ horaire()!.heure_fin }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2">
+              <span class="text-muted">Pause</span>
+              <strong>{{ formatDuree(horaire()!.duree_pause_minutes) }}</strong>
+            </div>
+            } @else {
+            <p class="text-muted mb-0 small">Aucun horaire enregistré pour ce stage.</p>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="row g-3">
+          <div class="col-6 col-md-4">
+            <div class="stat-card">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-primary-light"><i class="ti ti-calendar"></i></div>
+                <div><h6>Jours pointés</h6><p>{{ stats()?.total_jours ?? 0 }}</p></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="stat-card">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-success-light"><i class="ti ti-check"></i></div>
+                <div><h6>Présents</h6><p>{{ stats()?.presents ?? 0 }}</p></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="stat-card">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-warning-light"><i class="ti ti-clock"></i></div>
+                <div><h6>Retards</h6><p>{{ stats()?.retards ?? 0 }}</p></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="stat-card">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-danger-light"><i class="ti ti-x"></i></div>
+                <div><h6>Absences</h6><p>{{ stats()?.absents ?? 0 }}</p></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="stat-card">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-info-light"><i class="ti ti-hourglass"></i></div>
+                <div><h6>Heures travaillées</h6><p>{{ formatMinutes(stats()?.total_minutes) }}</p></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4">
+            <div class="stat-card">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-warning-light"><i class="ti ti-alarm"></i></div>
+                <div><h6>Retard cumulé</h6><p>{{ formatMinutes(stats()?.total_retard_minutes) }}</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+</div>
+
+@if (showCorrectModal()) {
+<div class="modal-backdrop-custom" (click)="closeCorrection()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Corriger une présence</h5>
+        <button type="button" class="btn-close" (click)="closeCorrection()"></button>
+      </div>
+      <div class="modal-body">
+        @if (correctionError()) {
+        <div class="alert alert-danger">{{ correctionError() }}</div>
+        }
+        @if (selected(); as p) {
+        <div class="mb-3">
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Stagiaire</span>
+            <strong>{{ p.stagiaire_prenom }} {{ p.stagiaire_nom }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Date</span>
+            <strong>{{ formatDatePointage(p.date_pointage) }}</strong>
+          </div>
+        </div>
+        }
+        <div class="mb-3">
+          <label class="form-label">Heure d'entrée</label>
+          <input type="datetime-local" class="form-control" [(ngModel)]="correction.heure_entree" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Heure de sortie</label>
+          <input type="datetime-local" class="form-control" [(ngModel)]="correction.heure_sortie" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Retard (minutes)</label>
+          <input type="number" min="0" step="1" class="form-control" [(ngModel)]="correction.retard_minutes" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Statut</label>
+          <select class="form-select" [(ngModel)]="correction.statut">
+            <option value="PRESENT">Présent</option>
+            <option value="RETARD">Retard</option>
+            <option value="ABSENT">Absent</option>
+          </select>
+        </div>
+        <div class="mb-1">
+          <label class="form-label">Commentaire</label>
+          <textarea class="form-control" rows="3" maxlength="500" [(ngModel)]="correction.commentaire" placeholder="Motif de la correction..."></textarea>
+          <small class="text-muted">{{ correction.commentaire?.length || 0 }}/500</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCorrection()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="saveCorrection()" [disabled]="savingCorrection()">
+          @if (savingCorrection()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+@if (showHoraireModal()) {
+<div class="modal-backdrop-custom" (click)="closeHoraireEdit()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Modifier les horaires</h5>
+        <button type="button" class="btn-close" (click)="closeHoraireEdit()"></button>
+      </div>
+      <div class="modal-body">
+        @if (horaireError()) {
+        <div class="alert alert-danger">{{ horaireError() }}</div>
+        }
+        <div class="mb-3">
+          <label class="form-label">Heure de début</label>
+          <input type="time" class="form-control" [(ngModel)]="horaireForm.heure_debut" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Heure de fin</label>
+          <input type="time" class="form-control" [(ngModel)]="horaireForm.heure_fin" />
+        </div>
+        <div class="mb-1">
+          <label class="form-label">Durée de pause (minutes)</label>
+          <input type="number" min="0" max="480" step="5" class="form-control" [(ngModel)]="horaireForm.duree_pause_minutes" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeHoraireEdit()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="saveHoraire()" [disabled]="savingHoraire()">
+          @if (savingHoraire()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

@@ -1,0 +1,140 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Gestion des Stagiaires</h4>
+      <p class="text-muted mb-0">Gérez les informations de vos stagiaires</p>
+    </div>
+    <button class="btn btn-primary-custom" (click)="openAdd()">
+      <i class="ti ti-plus me-1"></i> Ajouter un stagiaire
+    </button>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control" placeholder="Rechercher un stagiaire..."
+            [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <span class="text-muted">{{ filtered().length }} stagiaire(s)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Stagiaire</th>
+            <th>École / Spécialité</th>
+            <th>Compétences</th>
+            <th>Stages</th>
+            <th>Progression</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of filtered(); track s.id) {
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar avatar-sm bg-light-primary me-3">
+                  <span class="text-primary fw-bold">{{ s.prenom?.charAt(0) }}{{ s.nom?.charAt(0) }}</span>
+                </div>
+                <div>
+                  <h6 class="mb-0">{{ s.prenom }} {{ s.nom }}</h6>
+                  <small class="text-muted">{{ s.email }}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div>{{ s.ecole || '—' }}</div>
+              <small class="text-muted">{{ s.specialite || '' }} {{ s.niveau ? '(' + s.niveau + ')' : '' }}</small>
+            </td>
+            <td><span class="text-muted small">{{ s.competences || '—' }}</span></td>
+            <td><span class="badge bg-light-primary text-primary">{{ s.nb_stages }}</span></td>
+            <td style="min-width: 150px;">
+              <div class="d-flex align-items-center">
+                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                  <div class="progress-bar bg-primary" [style.width]="getProgress(s) + '%'"></div>
+                </div>
+                <small class="text-muted">{{ getProgress(s) }}%</small>
+              </div>
+            </td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="openEdit(s)"><i class="ti ti-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(s.id)"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+          } @empty {
+          <tr><td colspan="6" class="text-center text-muted py-4">Aucun stagiaire trouvé</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (showModal()) {
+<div class="modal-backdrop-custom" (click)="closeModal()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ editMode() ? 'Modifier le stagiaire' : 'Ajouter un stagiaire' }}</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nom *</label>
+            <input type="text" class="form-control" [(ngModel)]="form.nom" placeholder="Nom" />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Prénom *</label>
+            <input type="text" class="form-control" [(ngModel)]="form.prenom" placeholder="Prénom" />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email *</label>
+          <input type="email" class="form-control" [(ngModel)]="form.email" placeholder="email@steg.tn" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Téléphone</label>
+          <input type="text" class="form-control" [(ngModel)]="form.telephone" placeholder="+216 XX XXX XXX" />
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">École</label>
+            <input type="text" class="form-control" [(ngModel)]="form.ecole" placeholder="ENSI, ISAMM, FST..." />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Spécialité</label>
+            <input type="text" class="form-control" [(ngModel)]="form.specialite" placeholder="Génie Logiciel..." />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Compétences</label>
+          <textarea class="form-control" [(ngModel)]="form.competences" rows="2" placeholder="Angular, Python, SQL..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="save()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          {{ editMode() ? 'Mettre à jour' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

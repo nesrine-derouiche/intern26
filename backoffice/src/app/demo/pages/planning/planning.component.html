@@ -1,0 +1,284 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Planning</h4>
+      <p class="text-muted mb-0">Planning agrégé des stages : réunions, échéances de tâches, pointages et jalons</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      @if (scopeLabel) {
+      <span class="badge bg-light text-dark border">{{ scopeLabel }}</span>
+      }
+      <button type="button" class="btn btn-outline-secondary" (click)="refresh()" [disabled]="loading()">
+        <i class="ti ti-refresh me-1"></i>Actualiser
+      </button>
+    </div>
+  </div>
+</div>
+
+@if (isBlocked) {
+<div class="empty-state">
+  <i class="ti ti-lock empty-icon"></i>
+  <h5>Accès refusé</h5>
+  <p>La consultation du planning dans le Backoffice est réservée aux administrateurs, RH, encadrants et chefs de département.</p>
+</div>
+} @else {
+
+@if (success()) {
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  <i class="ti ti-circle-check me-1"></i>{{ success() }}
+  <button type="button" class="btn-close" (click)="success.set('')" aria-label="Fermer"></button>
+</div>
+}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-primary-light"><i class="ti ti-calendar-event"></i></div>
+        <div><h6>Événements</h6><p>{{ statEvenements() }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-info-light"><i class="ti ti-users"></i></div>
+        <div><h6>Réunions</h6><p>{{ statReunions() }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-warning-light"><i class="ti ti-checkbox"></i></div>
+        <div><h6>Tâches</h6><p>{{ statTaches() }}</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-success-light"><i class="ti ti-clock"></i></div>
+        <div><h6>Pointages</h6><p>{{ statPointages() }}</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Date début</label>
+        <input type="date" class="form-control" [ngModel]="fDateDebut()" (ngModelChange)="fDateDebut.set($event)" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Date fin</label>
+        <input type="date" class="form-control" [ngModel]="fDateFin()" (ngModelChange)="fDateFin.set($event)" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Stagiaire</label>
+        <select class="form-select" [ngModel]="fStagiaireId()" (ngModelChange)="onStagiaireChange($event)">
+          <option value="">Tous les stagiaires</option>
+          @for (opt of stagiaireOptions(); track opt.id) {
+          <option [value]="opt.id">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Stage</label>
+        <select class="form-select" [ngModel]="fStageId()" (ngModelChange)="fStageId.set($event)">
+          <option value="">Tous les stages</option>
+          @for (s of stageOptions(); track s.id) {
+          <option [value]="s.id">{{ s.stagiaire_prenom }} {{ s.stagiaire_nom }} — {{ s.departement_nom }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Type d'événement</label>
+        <select class="form-select" [ngModel]="fType()" (ngModelChange)="fType.set($event)">
+          <option value="TOUS">Tous les types</option>
+          @for (type of EVENT_TYPES; track type) {
+          <option [value]="type">{{ TYPE_LABELS[type] }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-6 text-end">
+        <button type="button" class="btn btn-outline-secondary me-2" (click)="resetFilters()">
+          <i class="ti ti-refresh me-1"></i>Réinitialiser
+        </button>
+        <button type="button" class="btn btn-primary-custom" (click)="applyFilters()">
+          <i class="ti ti-search me-1"></i>Rechercher
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <h6 class="mb-0">Événements du planning</h6>
+      @if (periode(); as p) {
+      <small class="text-muted">Période : {{ formatDate(p.date_debut) }} → {{ formatDate(p.date_fin) }}</small>
+      }
+    </div>
+
+    @if (error()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+      <span><i class="ti ti-alert-circle me-1"></i>{{ error() }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="load()">Réessayer</button>
+    </div>
+    }
+
+    @if (truncated()) {
+    <div class="alert alert-warning mb-0">
+      <i class="ti ti-alert-triangle me-1"></i>La période demandée dépasse les 500 premiers événements : affinez la période ou le stage.
+    </div>
+    }
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Heure</th>
+            <th>Type</th>
+            <th>Titre</th>
+            <th>Stagiaire</th>
+            <th>Stage</th>
+            <th>Statut</th>
+            <th class="text-center">Détail</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+          <tr>
+            <td colspan="8" class="text-center text-muted py-5">
+              <span class="spinner-border spinner-border-sm me-2"></span>Chargement du planning...
+            </td>
+          </tr>
+          } @else {
+            @for (e of events(); track e.id) {
+            <tr>
+              <td class="text-nowrap">{{ formatDate(e.date) }}</td>
+              <td class="text-nowrap">{{ formatTime(e.time) }}</td>
+              <td><span [class]="typeBadge(e.type)">{{ typeLabel(e.type) }}</span></td>
+              <td>{{ e.title || '—' }}</td>
+              <td>{{ stagiaireLabel(e) }}</td>
+              <td>{{ stageLabel(e) }}</td>
+              <td><span [class]="statusBadge(e.status)">{{ statusLabel(e.status) }}</span></td>
+              <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-primary" title="Voir le détail" (click)="openDetail(e)">
+                  <i class="ti ti-eye"></i>
+                </button>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="8" class="text-center text-muted py-4">Aucun événement trouvé</td>
+            </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3">
+      <small class="text-muted">{{ total() }} résultat(s) · Page {{ page() }} sur {{ pages() || 1 }}</small>
+      <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="page() <= 1 || loading()" (click)="goToPage(page() - 1)">
+          <i class="ti ti-chevron-left me-1"></i>Précédent
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="page() >= pages() || loading()" (click)="goToPage(page() + 1)">
+          Suivant<i class="ti ti-chevron-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (detail(); as e) {
+<div class="modal-backdrop-custom" (click)="closeDetail()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Détail de l'événement</h5>
+        <button type="button" class="btn-close" (click)="closeDetail()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Titre</span>
+            <strong>{{ e.title || '—' }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Date</span>
+            <strong>{{ formatDate(e.date) }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Heure</span>
+            <strong>{{ formatTime(e.time) }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Type</span>
+            <strong><span [class]="typeBadge(e.type)">{{ typeLabel(e.type) }}</span></strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Statut</span>
+            <strong><span [class]="statusBadge(e.status)">{{ statusLabel(e.status) }}</span></strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Stagiaire</span>
+            <strong>{{ stagiaireLabel(e) }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Stage</span>
+            <strong>{{ stageLabel(e) }}</strong>
+          </div>
+        </div>
+        @if (hasMeta(e, ['salle', 'lien_visio', 'priorite', 'progress', 'retard_minutes', 'date_debut'])) {
+        <div class="border-top pt-2">
+          @if (metaValue(e, 'salle')) {
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Salle</span>
+            <strong>{{ metaValue(e, 'salle') }}</strong>
+          </div>
+          }
+          @if (metaValue(e, 'lien_visio')) {
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Lien visio</span>
+            <strong class="text-truncate ms-3" style="max-width: 60%">{{ metaValue(e, 'lien_visio') }}</strong>
+          </div>
+          }
+          @if (metaValue(e, 'priorite')) {
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Priorité</span>
+            <strong>{{ metaValue(e, 'priorite') }}</strong>
+          </div>
+          }
+          @if (metaValue(e, 'progress')) {
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Progression</span>
+            <strong>{{ metaValue(e, 'progress') }} %</strong>
+          </div>
+          }
+          @if (metaValue(e, 'retard_minutes')) {
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Retard</span>
+            <strong>+{{ metaValue(e, 'retard_minutes') }} min</strong>
+          </div>
+          }
+        </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetail()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+}

@@ -1,0 +1,130 @@
+<div class="auth-main">
+  <div class="auth-wrapper v3">
+    <div class="auth-form">
+      <div class="card auth-card">
+        <div class="card-body">
+          <form [formGroup]="registerForm" (ngSubmit)="onSubmit($event)">
+            <div class="auth-logo d-flex justify-content-center">
+              <div class="logo-icon">
+                <i class="ti ti-user-plus"></i>
+              </div>
+            </div>
+            <div class="auth-header text-center mt-4">
+              <h2><b>Create Account</b></h2>
+              <p class="mt-2">Get started with your free account</p>
+            </div>
+
+            @if (error()) {
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+              <i class="ti ti-alert-circle me-2"></i>
+              <div>{{ error() }}</div>
+            </div>
+            }
+
+            @if (success()) {
+            <div class="alert alert-success d-flex align-items-center" role="alert">
+              <i class="ti ti-check-circle me-2"></i>
+              <div>{{ success() }}</div>
+            </div>
+            }
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-floating mb-3" [class.form-loading]="loading()">
+                  <input type="text" class="form-control" id="floatingInputFirstName" placeholder="First Name"
+                    formControlName="firstName"
+                    [class.is-invalid]="submitted() && registerForm.controls.firstName.invalid" />
+                  <label for="floatingInputFirstName">First Name</label>
+                  @if (submitted() && registerForm.controls.firstName.invalid) {
+                  <div class="invalid-feedback">
+                    @if (registerForm.controls.firstName.errors?.['required']) {
+                    <div>First name is required</div>
+                    }
+                  </div>
+                  }
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating mb-3" [class.form-loading]="loading()">
+                  <input type="text" class="form-control" id="floatingInputLastName" placeholder="Last Name"
+                    formControlName="lastName"
+                    [class.is-invalid]="submitted() && registerForm.controls.lastName.invalid" />
+                  <label for="floatingInputLastName">Last Name</label>
+                  @if (submitted() && registerForm.controls.lastName.invalid) {
+                  <div class="invalid-feedback">
+                    @if (registerForm.controls.lastName.errors?.['required']) {
+                    <div>Last name is required</div>
+                    }
+                  </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="form-floating mb-3" [class.form-loading]="loading()">
+              <input type="email" class="form-control" id="floatingInputEmail"
+                [class.is-invalid]="submitted() && registerForm.controls.email.invalid" placeholder="Email Address"
+                formControlName="email" />
+              <label for="floatingInputEmail">Email address</label>
+              @if (submitted() && registerForm.controls.email.invalid) {
+              <div class="invalid-feedback">
+                @if (registerForm.controls.email.errors?.['required']) {
+                <div>Email is required</div>
+                }
+                @if (registerForm.controls.email.errors?.['email']) {
+                <div>Enter a valid email address</div>
+                }
+              </div>
+              }
+            </div>
+
+            <div class="form-floating mb-3 password-field" [class.form-loading]="loading()">
+              <input [type]="showPassword() ? 'text' : 'password'" id="password" class="form-control"
+                formControlName="password"
+                [class.is-invalid]="submitted() && registerForm.controls.password.invalid"
+                placeholder="Password" />
+              <label for="password">Password</label>
+              <button type="button" class="password-toggle" (click)="showPassword.set(!showPassword())" tabindex="-1">
+                <i [class]="showPassword() ? 'ti ti-eye-off' : 'ti ti-eye'"></i>
+              </button>
+              @if (submitted() && registerForm.controls.password.invalid) {
+              <div class="invalid-feedback">
+                @if (registerForm.controls.password.errors?.['required']) {
+                <div>Password is required</div>
+                }
+                @if (registerForm.controls.password.errors?.['minlength']) {
+                <div>Password must be at least 8 characters</div>
+                }
+              </div>
+              }
+            </div>
+
+            <div class="form-check mt-3">
+              <input class="form-check-input input-primary" type="checkbox" id="termsCheck" />
+              <label class="form-check-label" for="termsCheck">
+                <span class="text-muted">I agree to the</span>
+                <a href="javascript:void(0)">Terms &amp; Conditions</a>
+              </label>
+            </div>
+
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-primary-custom" [disabled]="loading()">
+                @if (loading()) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Creating Account...
+                } @else {
+                Create Account
+                }
+              </button>
+            </div>
+
+            <div class="text-center mt-4">
+              <span class="text-muted">Already have an account?</span>
+              <a [routerLink]="['/login']" class="ms-1">Sign In</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

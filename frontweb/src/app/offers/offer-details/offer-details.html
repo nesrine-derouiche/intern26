@@ -1,0 +1,671 @@
+<app-landing-header />
+
+@if (loading()) {
+  <main class="page">
+    <div class="container">
+      <div class="state">
+        <span class="state__icon"><app-icon name="loader" /></span>
+        <h2>Chargement de l'offre…</h2>
+      </div>
+    </div>
+  </main>
+} @else if (offer(); as offer) {
+  <main class="page">
+    <div class="container">
+      <nav class="crumbs" aria-label="Fil d'ariane">
+        <a routerLink="/">Accueil</a>
+        <app-icon name="chevron-right" />
+        <a routerLink="/offres">Offres de stage</a>
+        <app-icon name="chevron-right" />
+        <span>{{ offer.titre }}</span>
+      </nav>
+
+      <header class="offer-hero">
+        <div class="offer-hero__left">
+          <span class="offer-hero__logo" aria-hidden="true">ST</span>
+          <div>
+            <span class="offer-hero__dept">
+              <app-icon name="building" />
+              {{ offer.departement }}
+            </span>
+            <h1 class="offer-hero__title">{{ offer.titre }}</h1>
+
+            <div class="offer-hero__meta">
+              <span class="offer-hero__chip">
+                <app-icon name="map-pin" />
+                {{ offer.localisation }}
+              </span>
+              <span class="offer-hero__chip">
+                <app-icon name="graduation-cap" />
+                {{ offer.niveau }}
+              </span>
+              <span class="offer-hero__chip">
+                <app-icon name="clock" />
+                {{ offer.duree }}
+              </span>
+              <span class="offer-hero__chip">
+                <app-icon name="users" />
+                {{ offer.places }} {{ offer.places > 1 ? 'places' : 'place' }}
+              </span>
+              <span class="offer-hero__chip offer-hero__chip--deadline">
+                <app-icon name="calendar" />
+                Candidature avant le {{ formatFullDate(offer.dateLimite) }}
+              </span>
+            </div>
+
+            <div class="offer-hero__tags">
+              @for (skill of offer.competences; track skill) {
+                <span class="offer-hero__tag">{{ skill }}</span>
+              }
+              @for (tech of offer.technologies ?? []; track tech) {
+                <span class="offer-hero__tag">{{ tech }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="layout">
+        <!-- Colonne principale -->
+        <div class="layout__main">
+          <section class="panel">
+            <h2 class="panel__title">
+              <app-icon name="briefcase" />
+              À propos de cette offre
+            </h2>
+            <p class="panel__text">{{ offer.description }}</p>
+          </section>
+
+          @if (offer.missions?.length) {
+            <section class="panel">
+              <h2 class="panel__title">
+                <app-icon name="target" />
+                Missions proposées
+              </h2>
+              <ul class="panel__list">
+                @for (mission of offer.missions; track $index) {
+                  <li>
+                    <app-icon name="check" />
+                    <span>{{ mission }}</span>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          @if (offer.technologies?.length || offer.competences.length) {
+            <section class="panel">
+              <h2 class="panel__title">
+                <app-icon name="cpu" />
+                Compétences requises
+              </h2>
+              @if (offer.technologies?.length) {
+                <p class="subtitle">Technologies</p>
+                <div class="chips">
+                  @for (tech of offer.technologies; track tech) {
+                    <span class="chips__item">{{ tech }}</span>
+                  }
+                </div>
+              }
+              @if (offer.competences.length) {
+                <p class="subtitle">Compétences</p>
+                <div class="chips">
+                  @for (skill of offer.competences; track skill) {
+                    <span class="chips__item">{{ skill }}</span>
+                  }
+                </div>
+              }
+            </section>
+          }
+
+          @if (offer.documents?.length) {
+            <section class="panel">
+              <h2 class="panel__title">
+                <app-icon name="file-text" />
+                Documents requis
+              </h2>
+              <ul class="panel__list">
+                @for (doc of offer.documents; track doc) {
+                  <li>
+                    <app-icon name="check-circle" />
+                    <span>{{ doc }}</span>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        </div>
+
+        <!-- Colonne latérale -->
+        <aside class="layout__side">
+          <section class="apply-card" id="postuler">
+            <h3 class="apply-card__title">Postuler à cette offre</h3>
+            <span class="apply-card__deadline">
+              <app-icon name="calendar" />
+              Dépôt avant le {{ formatFullDate(offer.dateLimite) }}
+            </span>
+
+          @if (isAuthenticated() && isCandidat()) {
+            <div class="apply-card__flow" [class.apply-card__flow--leaving]="cvLeaving()">
+            @if (cvStatus() === 'ready') {
+              <span class="apply-card__cv-status">
+                <app-icon name="check-circle" />
+                CV déposé — prêt à postuler
+              </span>
+            } @else if (cvStatus() === 'none') {
+              <span class="apply-card__cv-status">
+                <app-icon name="info" />
+                Aucun CV — déposez-le ci-dessous pour postuler
+              </span>
+            }
+
+            <div class="apply-card__ai">
+              <h4 class="apply-card__ai-title">
+                <app-icon name="sparkles" />
+                Compatibilité IA
+              </h4>
+
+              @if (aiState() === 'loading') {
+                <div class="apply-card__ai-loading" role="status">
+                  <app-icon name="loader" />
+                  Analyse de votre CV avec l'IA…
+                </div>
+              } @else if (aiState() === 'done' && aiResult(); as result) {
+                <div class="ai-result" role="status">
+                  <div class="ai-result__orb ai-result__orb--one" aria-hidden="true"></div>
+                  <div class="ai-result__orb ai-result__orb--two" aria-hidden="true"></div>
+
+                  <div class="ai-result__body">
+                    @if (result.level) {
+                      <div class="ai-result__head">
+                        <span class="ai-badge" [class]="badgeClass(result.level)">
+                          <span class="ai-badge__dot" aria-hidden="true"></span>
+                          {{ levelLabel(result.level) }}
+                        </span>
+                      </div>
+                    }
+
+                    <div class="ai-hero">
+                      @if (result.score != null) {
+                        <div class="ai-gauge">
+                          <svg class="ai-gauge__svg" viewBox="0 0 120 120" aria-hidden="true">
+                            <defs>
+                              <linearGradient id="ai-gauge-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#8b5cf6"></stop>
+                                <stop offset="55%" stop-color="#6366f1"></stop>
+                                <stop offset="100%" stop-color="#06b6d4"></stop>
+                              </linearGradient>
+                            </defs>
+                            <circle class="ai-gauge__track" cx="60" cy="60" r="52"></circle>
+                            <circle
+                              class="ai-gauge__bar"
+                              cx="60"
+                              cy="60"
+                              r="52"
+                              stroke="url(#ai-gauge-grad)"
+                              [style.stroke-dasharray]="ringCircumference"
+                              [style.stroke-dashoffset]="ringOffset()"
+                            ></circle>
+                          </svg>
+                          <div class="ai-gauge__value">
+                            <strong>{{ result.score }}<span>%</span></strong>
+                            <span class="ai-gauge__label">Overall score</span>
+                          </div>
+                        </div>
+                      }
+
+                      <div class="ai-chance">
+                        <span class="ai-chance__label">
+                          <app-icon name="target" />
+                          Estimated interview chance
+                        </span>
+                        <strong class="ai-chance__value">{{ interviewChance(result) }}%</strong>
+                        <div class="ai-chance__track">
+                          <div class="ai-chance__bar" [style.width.%]="interviewChance(result)"></div>
+                        </div>
+                        <span class="ai-chance__hint">Probability of being shortlisted</span>
+                      </div>
+                    </div>
+
+                    <p class="ai-result__desc">
+                      This analysis compares your CV with the internship requirements.
+                    </p>
+
+                    <div class="ai-meters">
+                      <div class="ai-meter">
+                        <div class="ai-meter__head">
+                          <span>Experience match</span>
+                          <strong>{{ pct(result.experienceMatch) }}%</strong>
+                        </div>
+                        <div class="ai-meter__track">
+                          <div class="ai-meter__bar" [style.width.%]="pct(result.experienceMatch)"></div>
+                        </div>
+                      </div>
+                      <div class="ai-meter">
+                        <div class="ai-meter__head">
+                          <span>Education match</span>
+                          <strong>{{ pct(result.educationMatch) }}%</strong>
+                        </div>
+                        <div class="ai-meter__track">
+                          <div class="ai-meter__bar" [style.width.%]="pct(result.educationMatch)"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    @if ((result.strengths ?? []).length) {
+                      <div class="ai-section">
+                        <p class="ai-section__label">Matching skills</p>
+                        <div class="ai-chips">
+                          @for (skill of result.strengths; track skill; let i = $index) {
+                            <span
+                              class="ai-chip ai-chip--strength"
+                              [style.animation-delay]="i * 70 + 'ms'"
+                            >
+                              <app-icon name="check" />
+                              {{ skill }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    @if ((result.weaknesses ?? []).length) {
+                      <div class="ai-section">
+                        <p class="ai-section__label">Missing skills</p>
+                        <div class="ai-chips">
+                          @for (skill of result.weaknesses; track skill; let i = $index) {
+                            <span
+                              class="ai-chip ai-chip--weakness"
+                              [style.animation-delay]="i * 70 + 'ms'"
+                            >
+                              <app-icon name="plus" />
+                              {{ skill }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    @if ((result.languages ?? []).length) {
+                      <div class="ai-section">
+                        <p class="ai-section__label">Languages</p>
+                        <div class="ai-chips">
+                          @for (lang of result.languages; track lang) {
+                            <span class="ai-chip ai-chip--language">
+                              <app-icon name="globe" />
+                              {{ lang }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    @if (result.recommendation || result.synthese || result.message) {
+                      <div class="ai-reco">
+                        <span class="ai-reco__icon"><app-icon name="sparkles" /></span>
+                        <div>
+                          <p class="ai-reco__title">Recommendation</p>
+                          <p class="ai-reco__text">
+                            {{ result.recommendation ?? result.synthese ?? result.message }}
+                          </p>
+                        </div>
+                      </div>
+                    }
+
+                    <div class="ai-actions">
+                      <button
+                        type="button"
+                        class="btn btn--primary"
+                        (click)="apply()"
+                        [disabled]="applying() || applied() || aiState() === 'loading'"
+                      >
+                        @if (applying()) {
+                          <app-icon name="loader" />
+                          Envoi…
+                        } @else {
+                          Postuler
+                          <app-icon name="arrow-right" />
+                        }
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn--danger-outline"
+                        (click)="requestCvDelete()"
+                        [disabled]="applying() || deletingCv()"
+                      >
+                        <app-icon name="trash" />
+                        Supprimer le CV
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <p class="apply-card__ai-empty">Aucune analyse effectuée.</p>
+                <button
+                  type="button"
+                  class="btn btn--outline btn--block"
+                  (click)="analyseCv()"
+                  [disabled]="cvStatus() !== 'ready' || applying() || aiState() === 'loading'"
+                >
+                  <app-icon name="sparkles" />
+                  Vérifier avec l'IA
+                </button>
+                @if (cvStatus() === 'none') {
+                  <p class="cta__hint">Déposez d'abord votre CV pour lancer l'analyse.</p>
+                }
+              }
+
+              @if (aiError(); as message) {
+                <p class="cta__error" role="alert">{{ message }}</p>
+              }
+            </div>
+            </div>
+          }
+
+            <ng-container
+              [ngTemplateOutlet]="ctaBlock"
+              [ngTemplateOutletContext]="{ hideActions: aiState() === 'done' }"
+            />
+          </section>
+
+          <section class="panel">
+            <h2 class="panel__title">
+              <app-icon name="sliders" />
+              Détails de l'offre
+            </h2>
+            <ul class="overview">
+              <li>
+                <app-icon name="building" />
+                <div>
+                  <div class="overview__label">Département</div>
+                  <div class="overview__value">{{ offer.departement }}</div>
+                </div>
+              </li>
+              <li>
+                <app-icon name="map-pin" />
+                <div>
+                  <div class="overview__label">Localisation</div>
+                  <div class="overview__value">{{ offer.localisation }}</div>
+                </div>
+              </li>
+              <li>
+                <app-icon name="clock" />
+                <div>
+                  <div class="overview__label">Période du stage</div>
+                  <div class="overview__value">{{ offer.duree }}</div>
+                </div>
+              </li>
+              <li>
+                <app-icon name="graduation-cap" />
+                <div>
+                  <div class="overview__label">Niveau demandé</div>
+                  <div class="overview__value">{{ offer.niveau }}</div>
+                </div>
+              </li>
+              <li>
+                <app-icon name="users" />
+                <div>
+                  <div class="overview__label">Postes disponibles</div>
+                  <div class="overview__value">
+                    {{ offer.places }} {{ offer.places > 1 ? 'places' : 'place' }}
+                  </div>
+                </div>
+              </li>
+              <li>
+                <app-icon name="calendar" />
+                <div>
+                  <div class="overview__label">Date limite de candidature</div>
+                  <div class="overview__value">{{ formatFullDate(offer.dateLimite) }}</div>
+                </div>
+              </li>
+              @if (offer.encadrant; as encadrant) {
+                <li>
+                  <app-icon name="user" />
+                  <div>
+                    <div class="overview__label">Encadrant</div>
+                    <div class="overview__value">
+                      {{ encadrant.prenom }} {{ encadrant.nom }}
+                    </div>
+                    @if (encadrant.service) {
+                      <div class="overview__value overview__value--muted">
+                        {{ encadrant.service }}
+                      </div>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          </section>
+        </aside>
+      </div>
+
+      <!-- Bandeau d'action en bas de page -->
+      <section class="bottom-cta">
+        <div class="bottom-cta__text">
+          <h3 class="bottom-cta__title">Envie de rejoindre {{ offer.departement }} ?</h3>
+          <p class="bottom-cta__desc">
+            Postulez en quelques secondes et suivez l'état de votre candidature en temps réel.
+          </p>
+        </div>
+        <div class="bottom-cta__actions">
+          <ng-container [ngTemplateOutlet]="ctaBlock" />
+        </div>
+      </section>
+
+      @if (related().length > 0) {
+        <section class="related">
+          <div class="related__head">
+            <h2 class="related__title">Offres similaires</h2>
+            <a class="related__link" routerLink="/offres">
+              Toutes les offres
+              <app-icon name="arrow-right" />
+            </a>
+          </div>
+          <div class="related__grid">
+            @for (item of related(); track item.id) {
+              <app-offer-card [offer]="item" />
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </main>
+} @else {
+  <main class="page">
+    <div class="container">
+      <div class="state">
+        <span class="state__icon"><app-icon name="search" /></span>
+        <h2>Offre introuvable</h2>
+        <p>Cette offre n'existe pas ou n'est plus disponible.</p>
+        <a class="btn btn--primary" routerLink="/offres">
+          Voir toutes les offres
+          <app-icon name="arrow-right" />
+        </a>
+      </div>
+    </div>
+  </main>
+}
+
+<!-- Bloc d'action contextuel : « Déposer mon CV », « Postuler » ou « Supprimer le CV ». -->
+<ng-template #ctaBlock let-hideActions="hideActions">
+  @if (applied()) {
+    <div class="cta">
+      <div class="cta__done">
+        <app-icon name="check-circle" />
+        Candidature envoyée
+      </div>
+      @if (applySuccess(); as message) {
+        <p class="cta__hint">{{ message }}</p>
+      }
+    </div>
+  } @else if (!isAuthenticated()) {
+    <div class="cta">
+      <a
+        class="btn btn--primary"
+        [routerLink]="['/connexion']"
+        [queryParams]="{ retour: '/offres/' + (offer()?.id ?? '') }"
+      >
+        Se connecter pour postuler
+        <app-icon name="arrow-right" />
+      </a>
+      <p class="cta__hint">Vous devrez être connecté avec un compte candidat.</p>
+    </div>
+  } @else if (!isCandidat()) {
+    <div class="cta">
+      <p class="cta__hint">
+        Seuls les comptes candidats peuvent déposer une candidature.
+      </p>
+    </div>
+  } @else if (cvStatus() === 'checking') {
+    <div class="cta">
+      <button class="btn btn--primary" disabled>
+        <app-icon name="loader" />
+        Vérification du CV…
+      </button>
+    </div>
+  } @else if (cvStatus() === 'none') {
+    <div class="cta cta--entering">
+      @if (cvUploading()) {
+        <div class="cta__upload">
+          <div class="cta__progress">
+            <div class="cta__progress-bar" [style.width.%]="cvProgress() ?? 0"></div>
+          </div>
+          <p class="cta__hint">Envoi de votre CV… {{ cvProgress() }}%</p>
+        </div>
+      } @else {
+        <label class="btn btn--primary">
+          <app-icon name="upload" />
+          Déposer mon CV
+          <input type="file" accept="application/pdf" (change)="onCvSelected($event)" hidden />
+        </label>
+        <p class="cta__hint">
+          PDF uniquement — 10 Mo maximum. Ce CV sera enregistré sur votre compte.
+        </p>
+      }
+      @if (cvUploadError(); as message) {
+        <p class="cta__error" role="alert">{{ message }}</p>
+      }
+    </div>
+  } @else {
+    <div class="cta">
+      @if (!hideActions) {
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="apply()"
+          [disabled]="applying() || aiState() === 'loading'"
+        >
+          @if (applying()) {
+            <app-icon name="loader" />
+            Envoi de la candidature…
+          } @else {
+            Postuler
+            <app-icon name="arrow-right" />
+          }
+        </button>
+        <button
+          type="button"
+          class="btn btn--danger-outline"
+          (click)="requestCvDelete()"
+          [disabled]="applying() || deletingCv()"
+        >
+          <app-icon name="trash" />
+          Supprimer le CV
+        </button>
+      }
+      @if (applyError(); as message) {
+        <p class="cta__error" role="alert">{{ message }}</p>
+      }
+    </div>
+  }
+</ng-template>
+
+<app-landing-footer />
+
+<!-- Confirmation avant candidature sans analyse IA -->
+@if (showConfirm()) {
+  <div class="ai-dialog" (click)="closeConfirm()" role="presentation">
+    <div
+      class="ai-dialog__card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ai-confirm-title"
+      (click)="$event.stopPropagation()"
+    >
+      <button class="ai-dialog__close" type="button" aria-label="Fermer" (click)="closeConfirm()">
+        <app-icon name="close" />
+      </button>
+      <span class="ai-dialog__icon">
+        <app-icon name="info" />
+      </span>
+      <h3 class="ai-dialog__title" id="ai-confirm-title">Analyse IA non effectuée</h3>
+      <p class="ai-dialog__text">
+        Vous n'avez pas analysé votre CV avec l'IA. Souhaitez-vous quand même postuler ?
+      </p>
+      <div class="ai-dialog__actions">
+        <button type="button" class="btn btn--primary" (click)="continueApply()" [disabled]="applying()">
+          @if (applying()) {
+            <app-icon name="loader" />
+            Envoi de la candidature…
+          } @else {
+            Continuer
+          }
+        </button>
+        <button type="button" class="btn btn--outline" (click)="analyzeFirst()">
+          Analyser d'abord
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Confirmation avant suppression du CV -->
+@if (showDeleteConfirm()) {
+  <div class="ai-dialog" (click)="closeDeleteConfirm()" role="presentation">
+    <div
+      class="ai-dialog__card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ai-delete-title"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        class="ai-dialog__close"
+        type="button"
+        aria-label="Fermer"
+        (click)="closeDeleteConfirm()"
+      >
+        <app-icon name="close" />
+      </button>
+      <span class="ai-dialog__icon ai-dialog__icon--danger">
+        <app-icon name="trash" />
+      </span>
+      <h3 class="ai-dialog__title" id="ai-delete-title">Supprimer le CV ?</h3>
+      <p class="ai-dialog__text">
+        Voulez-vous supprimer le CV déposé pour cette offre ?
+      </p>
+      @if (deleteError(); as message) {
+        <p class="cta__error" role="alert">{{ message }}</p>
+      }
+      <div class="ai-dialog__actions">
+        <button type="button" class="btn btn--outline" (click)="closeDeleteConfirm()">
+          Annuler
+        </button>
+        <button
+          type="button"
+          class="btn btn--danger-outline"
+          (click)="confirmDeleteCv()"
+          [disabled]="deletingCv()"
+        >
+          @if (deletingCv()) {
+            <app-icon name="loader" />
+            Suppression…
+          } @else {
+            <app-icon name="trash" />
+            Supprimer
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

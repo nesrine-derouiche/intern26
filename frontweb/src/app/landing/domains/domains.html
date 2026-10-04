@@ -1,0 +1,33 @@
+<section class="domains" id="domaines">
+  <div class="container">
+    <app-section-header
+      eyebrow="Domaines de stage"
+      title="Explorez les métiers de la STEG"
+      subtitle="Six grands domaines couvrent l'ensemble de la chaîne de valeur de l'électricité et du gaz, du terrain à la transformation digitale."
+      [centered]="true"
+    />
+
+    <div class="domains__grid">
+      @for (domain of domains(); track domain.id; let i = $index) {
+        <article class="domain-card" appReveal [delay]="(i % 3) * 90">
+          <div class="domain-card__top">
+            <span
+              class="domain-card__icon"
+              [style.background]="'color-mix(in srgb, ' + domain.color + ' 12%, transparent)'"
+              [style.color]="domain.color"
+            >
+              <app-icon [name]="domain.icon" />
+            </span>
+            <span class="domain-card__count">{{ domain.nbStages }} offres</span>
+          </div>
+          <h3 class="domain-card__title">{{ domain.titre }}</h3>
+          <p class="domain-card__text">{{ domain.description }}</p>
+          <a class="domain-card__link" routerLink="/offres">
+            Voir les offres
+            <app-icon name="arrow-up-right" />
+          </a>
+        </article>
+      }
+    </div>
+  </div>
+</section>

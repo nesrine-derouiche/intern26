@@ -1,0 +1,73 @@
+<footer class="footer">
+  <div class="container">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <span class="footer__brand__logo"><app-icon name="zap" /></span>
+        <div class="footer__brand__name">STEG Internship</div>
+        <p class="footer__brand__text">
+          La plateforme officielle des stages et opportunités de la Société
+          Tunisienne de l'Électricité et du Gaz.
+        </p>
+        <div class="footer__social">
+          <a href="#" aria-label="LinkedIn"><app-icon name="linkedin" /></a>
+          <a href="#" aria-label="Facebook"><app-icon name="facebook" /></a>
+          <a href="#" aria-label="Twitter"><app-icon name="twitter" /></a>
+          <a href="#" aria-label="Email"><app-icon name="mail" /></a>
+        </div>
+      </div>
+
+      <nav class="footer__col" aria-label="Plateforme">
+        <h4 class="footer__col__title">Plateforme</h4>
+        <ul>
+          <li><a routerLink="/offres">Dernières offres</a></li>
+          <li><a routerLink="/" [fragment]="'domaines'">Domaines de stage</a></li>
+          <li><a href="#">Créer un compte</a></li>
+          <li><a href="#">Se connecter</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer__col" aria-label="Ressources">
+        <h4 class="footer__col__title">Ressources</h4>
+        <ul>
+          <li><a href="#">Guide du candidat</a></li>
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Conditions d'éligibilité</a></li>
+          <li><a href="#">Attestations</a></li>
+        </ul>
+      </nav>
+
+      <div class="footer__col">
+        <h4 class="footer__col__title">Contact</h4>
+        <ul>
+          <li>
+            <a href="mailto:stages@steg.com.tn">
+              <app-icon name="mail" style="font-size: 15px; vertical-align: -2px; margin-right: 6px" />
+              stages@steg.com.tn
+            </a>
+          </li>
+          <li>
+            <a href="tel:+21671000300">
+              <app-icon name="phone" style="font-size: 15px; vertical-align: -2px; margin-right: 6px" />
+              +216 71 000 300
+            </a>
+          </li>
+          <li>
+            <a href="#">
+              <app-icon name="map-pin" style="font-size: 15px; vertical-align: -2px; margin-right: 6px" />
+              38 rue Kemal Ataturk, Tunis
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <span>© 2026 STEG Internship. Tous droits réservés.</span>
+      <div class="footer__legal">
+        <a href="#">Mentions légales</a>
+        <a href="#">Confidentialité</a>
+        <a href="#">Cookies</a>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,139 @@
+<app-landing-header />
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Fil d'ariane">
+        <a routerLink="/">Accueil</a>
+        <app-icon name="chevron-right" />
+        <span>Offres de stage</span>
+      </nav>
+      <h1 class="page-hero__title">Offres de stage</h1>
+      <p class="page-hero__subtitle">
+        Parcourez les missions proposées par les directions de la STEG, filtrez
+        par domaine, localisation ou niveau, et postulez en quelques clics.
+      </p>
+    </div>
+  </section>
+
+  <section class="toolbar">
+    <div class="container">
+      <div class="toolbar__card">
+        <div class="toolbar__row">
+          <label class="search">
+            <app-icon name="search" />
+            <input
+              type="search"
+              placeholder="Rechercher un poste, un département, une compétence…"
+              [value]="searchTerm()"
+              (input)="onSearch($event)"
+            />
+          </label>
+
+          <label class="select">
+            <app-icon name="sliders" />
+            <select [value]="sortBy()" (change)="onSort($event)">
+              @for (option of sortOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+            <app-icon name="chevron-down" />
+          </label>
+        </div>
+
+        <div class="selects">
+          <label class="select">
+            <app-icon name="building" />
+            <select [value]="departmentFilter()" (change)="onDepartment($event)">
+              <option value="">Tous les départements</option>
+              @for (dept of departementOptions(); track dept.id) {
+                <option [value]="dept.id">{{ dept.nom }}</option>
+              }
+            </select>
+            <app-icon name="chevron-down" />
+          </label>
+
+          <label class="select">
+            <app-icon name="map-pin" />
+            <select [value]="localisationFilter()" (change)="onLocalisation($event)">
+              <option value="">Toutes les localisations</option>
+              @for (city of localisations(); track city) {
+                <option [value]="city">{{ city }}</option>
+              }
+            </select>
+            <app-icon name="chevron-down" />
+          </label>
+
+          <label class="select">
+            <app-icon name="graduation-cap" />
+            <select [value]="niveauFilter()" (change)="onNiveau($event)">
+              <option value="">Tous les niveaux</option>
+              @for (level of niveaux(); track level) {
+                <option [value]="level">{{ level }}</option>
+              }
+            </select>
+            <app-icon name="chevron-down" />
+          </label>
+        </div>
+
+        <div class="toolbar__meta">
+          <p class="toolbar__count">
+            @if (loading()) {
+              <app-icon name="loader" /> Chargement des offres…
+            } @else {
+              <strong>{{ totalResults() }}</strong>
+              {{ totalResults() <= 1 ? 'offre trouvée' : 'offres trouvées' }}
+            }
+          </p>
+          @if (hasActiveFilters()) {
+            <button type="button" class="toolbar__reset" (click)="reset()">
+              <app-icon name="close" />
+              Réinitialiser les filtres
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="results">
+    <div class="container">
+      @if (pageOffers().length > 0) {
+        <div class="results__grid">
+          @for (offer of pageOffers(); track offer.id) {
+            <app-offer-card [offer]="offer" />
+          }
+        </div>
+
+        <app-pagination
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          (pageChange)="goToPage($event)"
+        />
+      } @else if (error()) {
+        <div class="empty">
+          <span class="empty__icon"><app-icon name="info" /></span>
+          <h3>Impossible de charger les offres</h3>
+          <p>{{ error() }}</p>
+          <button type="button" class="btn btn--outline" (click)="retry()">
+            Réessayer
+          </button>
+        </div>
+      } @else {
+        <div class="empty">
+          <span class="empty__icon"><app-icon name="search" /></span>
+          <h3>Aucune offre ne correspond à votre recherche</h3>
+          <p>
+            Essayez de modifier vos filtres ou d'élargir votre recherche pour
+            découvrir d'autres opportunités.
+          </p>
+          <button type="button" class="btn btn--outline" (click)="reset()">
+            Réinitialiser les filtres
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+</main>
+
+<app-landing-footer />

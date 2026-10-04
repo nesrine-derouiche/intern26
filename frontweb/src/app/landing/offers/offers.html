@@ -1,0 +1,23 @@
+<section class="offers" id="offres">
+  <div class="container">
+    <app-section-header
+      eyebrow="Dernières offres"
+      title="Des opportunités pour chaque profil"
+      subtitle="Sélectionnez une offre, créez votre profil et candidatez en quelques minutes. Les places sont limitées."
+      [centered]="true"
+    />
+
+    <div class="offers__grid">
+      @for (offer of offers(); track offer.id; let i = $index) {
+        <app-offer-card [offer]="offer" appReveal [delay]="(i % 3) * 90" />
+      }
+    </div>
+
+    <div class="offers__action" appReveal>
+      <a class="btn btn--outline" routerLink="/offres">
+        Voir toutes les offres
+        <app-icon name="arrow-right" />
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,446 @@
+@if (loading()) {
+  <app-landing-header />
+  <main class="page">
+    <div class="container">
+      <div class="state">
+        <span class="state__icon"><app-icon name="loader" /></span>
+        <h2>Chargement de l'entretien…</h2>
+      </div>
+    </div>
+  </main>
+  <app-landing-footer />
+} @else if (forbidden()) {
+  <app-landing-header />
+  <main class="page">
+    <div class="container">
+      <div class="state">
+        <span class="state__icon state__icon--danger"><app-icon name="lock" /></span>
+        <p class="state__code">403 Forbidden</p>
+        <h2>Accès refusé</h2>
+        <p>Cet entretien ne vous est pas destiné. Connectez-vous avec le compte candidat concerné.</p>
+        <a class="btn btn--outline" routerLink="/">Retour à l'accueil</a>
+      </div>
+    </div>
+  </main>
+  <app-landing-footer />
+} @else if (notFound()) {
+  <app-landing-header />
+  <main class="page">
+    <div class="container">
+      <div class="state">
+        <span class="state__icon state__icon--danger"><app-icon name="alert-triangle" /></span>
+        <p class="state__code">404 Not Found</p>
+        <h2>Entretien introuvable</h2>
+        <p>Cet entretien IA n'existe pas ou n'est plus disponible.</p>
+        <a class="btn btn--outline" routerLink="/">Retour à l'accueil</a>
+      </div>
+    </div>
+  </main>
+  <app-landing-footer />
+} @else if (loadError(); as message) {
+  <app-landing-header />
+  <main class="page">
+    <div class="container">
+      <div class="state">
+        <span class="state__icon state__icon--danger"><app-icon name="alert-triangle" /></span>
+        <p class="state__code">Erreur</p>
+        <h2>Impossible de charger l'entretien</h2>
+        <p>{{ message }}</p>
+        <button class="btn btn--primary" (click)="reload()">Réessayer</button>
+      </div>
+    </div>
+  </main>
+  <app-landing-footer />
+} @else if (session(); as session) {
+  @if (completed()) {
+    <app-landing-header />
+    <main class="page">
+      <div class="container">
+        <section class="interview">
+          <div class="interview-card">
+            <span class="interview-card__badge">
+              <app-icon name="check-circle" />
+              Entretien IA
+            </span>
+            <div class="done__icon"><app-icon name="check" /></div>
+            <h1 class="interview-card__title">Entretien terminé</h1>
+            @if (finalScore() != null) {
+              <div class="done__score">
+                <span class="done__score-icon"><app-icon name="trending-up" /></span>
+                <span class="done__score-value">{{ finalScore() }}%</span>
+                <span class="done__score-label">de réussite à l'entretien</span>
+              </div>
+            }
+            <p class="done__message">
+              Vos réponses ont bien été transmises. Elles seront étudiées par
+              notre équipe de recrutement, qui vous recontactera très
+              rapidement.
+            </p>
+            <div class="interview-card__actions">
+              <a class="btn btn--primary" routerLink="/">Retour à l'accueil</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <app-landing-footer />
+  } @else if (phase() === 'intro') {
+    <app-landing-header />
+    <main class="page">
+      <div class="container">
+        <section class="interview">
+          <div class="interview-card lobby">
+            <span class="interview-card__badge">
+              <app-icon name="video" />
+              Entretien IA vidéo
+            </span>
+            <h1 class="interview-card__title">Bonjour {{ fullName() }}</h1>
+            <p class="interview-card__name">
+              Votre candidature est présélectionnée pour cette offre :
+            </p>
+            <p class="interview-card__offer">
+              <app-icon name="briefcase" />
+              {{ session.offre.titre }} — {{ session.offre.departement_nom }}
+            </p>
+            <p class="interview-card__instructions">
+              Vous rejoignez une salle de visioconférence : l'assistant RH IA
+              vous posera {{ totalQuestions() }} questions à voix haute, comme
+              un recruteur. Autorisez le micro et la caméra, puis rejoignez la
+              réunion. Vos réponses sont enregistrées : vous pourrez reprendre
+              plus tard via ce lien.
+              <br /><br />
+              L'entretien se déroule en mode verrouillé (plein écran, copier /
+              coller et outils de développement bloqués) : une sortie du mode
+              suspend temporairement l'entretien.
+            </p>
+
+            @if (camOk()) {
+              <video #camPreview class="devices__preview" autoplay playsinline muted></video>
+            }
+
+            <div class="devices">
+              <div class="devices__row">
+                <span class="devices__label"><app-icon name="mic" /> Micro</span>
+                @if (!deviceChecked()) {
+                  <span class="devices__status devices__status--pending">À vérifier</span>
+                } @else if (micOk()) {
+                  <span class="devices__status devices__status--ok"><app-icon name="check" /> Détecté</span>
+                } @else {
+                  <span class="devices__status devices__status--ko"><app-icon name="alert-triangle" /> Introuvable</span>
+                }
+              </div>
+              <div class="devices__row">
+                <span class="devices__label"><app-icon name="video" /> Caméra</span>
+                @if (!deviceChecked()) {
+                  <span class="devices__status devices__status--pending">À vérifier</span>
+                } @else if (camOk()) {
+                  <span class="devices__status devices__status--ok"><app-icon name="check" /> Détectée</span>
+                } @else {
+                  <span class="devices__status devices__status--ko"><app-icon name="alert-triangle" /> Introuvable</span>
+                }
+              </div>
+              @if (deviceError(); as error) {
+                <p class="devices__error"><app-icon name="alert-triangle" /> {{ error }}</p>
+              }
+              @if (serviceError(); as error) {
+                <p class="devices__error"><app-icon name="alert-triangle" /> {{ error }}</p>
+              }
+            </div>
+
+            <div class="interview-card__actions">
+              @if (actionError(); as error) {
+                <p class="studio__error"><app-icon name="alert-triangle" /> {{ error }}</p>
+              }
+              <button
+                class="btn btn--outline check-btn"
+                [disabled]="checkingDevices()"
+                (click)="checkDevices()"
+              >
+                @if (checkingDevices()) {
+                  <app-icon name="loader" /> Vérification…
+                } @else if (deviceChecked()) {
+                  Re-vérifier mon équipement
+                } @else {
+                  Vérifier mon équipement
+                }
+              </button>
+              <button
+                class="btn btn--primary begin-btn"
+                [disabled]="starting() || !deviceChecked() || !micOk() || !camOk() || !videoReady() || !serviceOk()"
+                (click)="beginInterview()"
+              >
+                @if (starting()) {
+                  <app-icon name="loader" /> Préparation…
+                } @else {
+                  Rejoindre l'entretien
+                }
+              </button>
+              @if (serviceError()) {
+                <span class="interview-hint">
+                  L'entretien IA est momentanément indisponible. Réessayez dans quelques instants.
+                </span>
+              } @else if (deviceChecked() && !micOk()) {
+                <span class="interview-hint">Le micro est indispensable pour répondre.</span>
+              } @else if (deviceChecked() && !videoReady()) {
+                <span class="interview-hint">L'aperçu caméra ne s'affiche pas. Vérifiez votre caméra.</span>
+              } @else {
+                <span class="interview-hint">
+                  Prévoir environ 10 minutes. Utilisez un endroit calme.
+                </span>
+              }
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <app-landing-footer />
+  } @else {
+    <section class="meeting">
+      <header class="meeting__top">
+        <div class="meeting__brand">
+          <span class="meeting__logo">STEG</span>
+          <span class="meeting__title">Entretien IA — visioconférence</span>
+        </div>
+        <div class="meeting__meta">
+          <span class="meeting__chip">Question {{ questionNumber() }} / {{ totalQuestions() }}</span>
+          <span class="meeting__timer"><app-icon name="clock" /> {{ elapsedTime() }}</span>
+          <button
+            type="button"
+            class="meeting__fullscreen"
+            (click)="toggleFullscreen()"
+            [attr.aria-label]="fullscreenActive() ? 'Quitter le plein écran' : 'Plein écran'"
+          >
+            <app-icon [name]="fullscreenActive() ? 'minimize' : 'maximize'" />
+          </button>
+        </div>
+      </header>
+
+      <div class="meeting__stage">
+        <div class="tile tile--ai">
+          <div class="tile__avatar-wrap">
+            <div
+              class="tile__avatar"
+              [class.tile__avatar--speaking]="aiSpeaking()"
+            >
+              <app-icon name="user" />
+            </div>
+            @if (aiSpeaking()) {
+              <div class="tile__equalizer" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            }
+          </div>
+          <div class="tile__label">
+            <span class="tile__name">Assistant RH IA</span>
+            <span class="tile__subtitle">{{ session.offre.titre }}</span>
+          </div>
+          @if (question(); as q) {
+            <div class="tile__bubble">{{ q.question }}</div>
+          }
+          <span class="tile__status" [class.tile__status--active]="aiSpeaking()">
+            <span class="tile__status-dot"></span>
+            {{ aiStatus() }}
+          </span>
+        </div>
+
+        <div class="tile tile--self">
+          @if (camOk()) {
+            <video #camPreview class="tile__video" autoplay playsinline muted></video>
+          } @else {
+            <div class="tile__placeholder">
+              <span class="tile__avatar tile__avatar--self"><app-icon name="user" /></span>
+            </div>
+          }
+          <div class="tile__label tile__label--self">
+            <span class="tile__name">{{ fullName() }}</span>
+            <span class="tile__subtitle">{{ selfStatus() }}</span>
+          </div>
+          @if (candidateSpeaking()) {
+            <div class="tile__speaking-ring" aria-hidden="true"></div>
+          }
+          <div class="tile__micbadge" [class.tile__micbadge--off]="!micOn()">
+            <app-icon [name]="micOn() ? 'mic' : 'mic-off'" />
+          </div>
+        </div>
+
+        <div
+          class="meeting__status"
+          [class.meeting__status--live]="recordingLive()"
+        >
+          <app-icon [name]="statusIcon()" />
+          <span>{{ statusText() }}</span>
+          @if (candidateSpeaking()) {
+            <span class="meeting__record-time">{{ recordTime() }}</span>
+          }
+        </div>
+
+        @if (actionError(); as error) {
+          <div class="meeting__error">
+            <app-icon name="alert-triangle" /> {{ error }}
+          </div>
+        }
+
+        @if (playbackBlocked()) {
+          <div class="meeting__sound-lock" role="alert">
+            <span class="meeting__sound-lock-icon"><app-icon name="volume-x" /></span>
+            <p>Le navigateur a bloqué le son. Cliquez pour écouter l'IA.</p>
+            <button type="button" class="btn btn--primary sound-unlock-btn" (click)="resumePlayback()">
+              <app-icon name="volume" /> Activer le son
+            </button>
+          </div>
+        }
+
+        @if (integrityWarning(); as warning) {
+          <div class="meeting__integrity-warning" role="alert">
+            <app-icon name="alert-triangle" />
+            <span>{{ warning }}</span>
+          </div>
+        }
+      </div>
+
+      @if (showTranscript()) {
+        <aside class="meeting__transcript">
+          <header class="meeting__transcript-head">
+            <span><app-icon name="message-square" /> Transcription</span>
+            <button
+              type="button"
+              class="meeting__transcript-close"
+              (click)="toggleTranscript()"
+              aria-label="Fermer la transcription"
+            >
+              <app-icon name="close" />
+            </button>
+          </header>
+          <div class="meeting__transcript-list">
+            @for (entry of transcript(); track entry.id) {
+              <div class="talk" [class.talk--ai]="entry.speaker === 'ai'">
+                <span class="talk__who">
+                  {{ entry.speaker === 'ai' ? 'Assistant RH IA' : fullName() }}
+                </span>
+                <p class="talk__text">{{ entry.text }}</p>
+                <span class="talk__time">{{ entry.time }}</span>
+              </div>
+            } @empty {
+              <p class="meeting__transcript-empty">
+                La conversation s'affichera ici, question après question.
+              </p>
+            }
+          </div>
+        </aside>
+      }
+
+      <footer class="meeting__controls">
+        <button
+          type="button"
+          class="ctl mic-btn"
+          [class.ctl--active]="recordingLive()"
+          [disabled]="micDisabled()"
+          (click)="toggleMic()"
+          [attr.aria-label]="micLabel()"
+        >
+          <span class="ctl__icon"><app-icon [name]="micOn() ? 'mic' : 'mic-off'" /></span>
+          <span class="ctl__label">{{ micLabel() }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="ctl cam-btn"
+          [class.ctl--on]="camOk()"
+          (click)="toggleCam()"
+          [attr.aria-label]="camOk() ? 'Couper la caméra' : 'Activer la caméra'"
+        >
+          <span class="ctl__icon"><app-icon [name]="camOk() ? 'video' : 'video-off'" /></span>
+          <span class="ctl__label">{{ camOk() ? 'Caméra' : 'Caméra coupée' }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="ctl sound-btn"
+          [class.ctl--off]="soundMuted()"
+          (click)="toggleSound()"
+          [attr.aria-label]="soundMuted() ? 'Activer le son' : 'Couper le son'"
+        >
+          <span class="ctl__icon"><app-icon [name]="soundMuted() ? 'volume-x' : 'volume'" /></span>
+          <span class="ctl__label">{{ soundMuted() ? 'Son coupé' : 'Son' }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="ctl transcript-btn"
+          [class.ctl--on]="showTranscript()"
+          (click)="toggleTranscript()"
+          aria-label="Afficher la transcription"
+        >
+          <span class="ctl__icon"><app-icon name="message-square" /></span>
+          <span class="ctl__label">Transcription</span>
+        </button>
+
+        <button
+          type="button"
+          class="ctl replay-btn"
+          (click)="replayQuestion()"
+          [disabled]="replaying() || !canReplay()"
+          aria-label="Rejouer la question"
+        >
+          <span class="ctl__icon"><app-icon name="volume" /></span>
+          <span class="ctl__label">Rejouer</span>
+        </button>
+
+        @if (canFinish() && phase() !== 'analyzing' && phase() !== 'next') {
+          <button
+            type="button"
+            class="ctl finish-btn"
+            (click)="finishInterview()"
+            [disabled]="finishing()"
+          >
+            <span class="ctl__label">Terminer</span>
+          </button>
+        }
+
+        <button
+          type="button"
+          class="ctl ctl--leave quit-btn"
+          (click)="confirmQuit.set(true)"
+          aria-label="Quitter l'entretien"
+        >
+          <span class="ctl__icon"><app-icon name="phone" /></span>
+          <span class="ctl__label">Quitter</span>
+        </button>
+      </footer>
+    </section>
+
+    @if (suspended()) {
+      <div class="suspend-overlay" role="dialog" aria-modal="true">
+        <div class="suspend-overlay__card">
+          <div class="suspend-overlay__icon"><app-icon name="alert-triangle" /></div>
+          <h3>Entretien temporairement suspendu</h3>
+          <p>{{ integrityWarning() }}</p>
+          <button type="button" class="btn btn--primary resume-btn" (click)="resumeInterview()">
+            Reprendre l'entretien
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (confirmQuit()) {
+      <div class="quit-modal" role="dialog" aria-modal="true">
+        <div class="quit-modal__card">
+          <div class="quit-modal__icon"><app-icon name="alert-triangle" /></div>
+          <h3>Quitter l'entretien ?</h3>
+          <p>
+            En quittant, l'entretien sera clôturé et le lien reçu par e-mail
+            deviendra inactif. Vous ne pourrez plus y accéder.
+          </p>
+          <div class="quit-modal__actions">
+            <button class="btn btn--outline" (click)="confirmQuit.set(false)">
+              Reprendre
+            </button>
+            <button class="btn btn--danger quit-confirm-btn" (click)="leaveInterview()">
+              Quitter
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+}

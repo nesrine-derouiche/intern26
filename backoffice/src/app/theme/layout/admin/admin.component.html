@@ -1,0 +1,37 @@
+<app-navigation class="coded-navbar pc-sidebar" [ngClass]="{
+    'navbar-collapsed': navCollapsed,
+    horizontal: currentLayout === 'horizontal',
+    compact: currentLayout === 'compact',
+    'mob-open': navCollapsedMob
+  }" (NavCollapsedMob)="closeMenu()" />
+<app-nav-bar (NavCollapse)="this.navCollapsed = !this.navCollapsed" (NavCollapsedMob)="navMobClick()" />
+<div class="pc-container">
+  <div class="coded-wrapper">
+    <div class="coded-content">
+      <div class="coded-inner-content">
+        <app-breadcrumb />
+        <div class="main-body">
+          <div class="page-wrapper">
+            <router-outlet />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pc-menu-overlay" (click)="closeMenu()" (keydown)="handleKeyDown($event)" tabindex="0"></div>
+</div>
+<footer class="pc-footer">
+  <div class="footer-wrapper container-fluid">
+    <div class="row align-items-center">
+      <div class="col my-1">
+        <p class="m-0">
+          <strong>STEG</strong> — Système de Gestion des Stages
+        </p>
+      </div>
+      <div class="col-auto my-1">
+        <span class="text-muted small">&copy; 2026 Société Tunisienne de l'Électricité et du Gaz</span>
+      </div>
+    </div>
+  </div>
+</footer>
+<app-configuration />

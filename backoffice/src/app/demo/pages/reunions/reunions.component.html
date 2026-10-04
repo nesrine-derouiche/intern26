@@ -1,0 +1,114 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Réunions</h4>
+      <p class="text-muted mb-0">Planifiez et suivez vos réunions avec les stagiaires</p>
+    </div>
+    <button class="btn btn-primary-custom" (click)="openAdd()">
+      <i class="ti ti-plus me-1"></i> Nouvelle réunion
+    </button>
+  </div>
+</div>
+
+<div class="row">
+  @for (r of reunions(); track r.id) {
+  <div class="col-md-6 col-xl-4 mb-4">
+    <div class="card h-100 reunion-card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="mb-1">{{ r.sujet }}</h5>
+            <p class="text-muted mb-0">
+              <i class="ti ti-user me-1"></i>{{ r.stagiaire_prenom }} {{ r.stagiaire_nom }}
+            </p>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" (click)="delete(r.id)"><i class="ti ti-trash"></i></button>
+        </div>
+        <div class="reunion-details">
+          <div class="d-flex align-items-center mb-2">
+            <i class="ti ti-calendar text-primary me-2"></i>
+            <span>{{ formatDate(r.date) }}</span>
+          </div>
+          <div class="d-flex align-items-center mb-2">
+            <i class="ti ti-clock text-primary me-2"></i>
+            <span>{{ r.heure }}</span>
+          </div>
+          @if (r.salle) {
+          <div class="d-flex align-items-center mb-2">
+            <i class="ti ti-building text-primary me-2"></i>
+            <span>{{ r.salle }}</span>
+          </div>
+          }
+          @if (r.lien_visio) {
+          <div class="d-flex align-items-center">
+            <i class="ti ti-video text-primary me-2"></i>
+            <a [href]="r.lien_visio" target="_blank" class="text-primary">Lien visioconférence</a>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  } @empty {
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="ti ti-calendar-off f-48 text-muted mb-3 d-block"></i>
+        <h5 class="text-muted">Aucune réunion planifiée</h5>
+        <p class="text-muted">Créez une nouvelle réunion pour commencer</p>
+      </div>
+    </div>
+  </div>
+  }
+</div>
+
+@if (showModal()) {
+<div class="modal-backdrop-custom" (click)="closeModal()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nouvelle réunion</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+        <div class="mb-3">
+          <label class="form-label">Stage *</label>
+          <select class="form-select" [(ngModel)]="form.stage_id">
+            <option value="">Sélectionner un stage</option>
+            @for (s of stages(); track s.id) {
+            <option [value]="s.id">{{ s.stagiaire_prenom }} {{ s.stagiaire_nom }} — {{ s.departement_nom }}</option>
+            }
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Sujet *</label>
+          <input type="text" class="form-control" [(ngModel)]="form.sujet" placeholder="Sujet de la réunion" />
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Date *</label>
+            <input type="date" class="form-control" [(ngModel)]="form.date" />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Heure *</label>
+            <input type="time" class="form-control" [(ngModel)]="form.heure" />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Salle</label>
+          <input type="text" class="form-control" [(ngModel)]="form.salle" placeholder="Salle B204" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="save()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Créer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

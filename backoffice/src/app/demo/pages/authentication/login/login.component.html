@@ -1,0 +1,79 @@
+<div class="auth-main">
+  <div class="auth-wrapper v3">
+    <div class="auth-form">
+      <div class="card auth-card my-5">
+        <div class="card-body">
+          <form (ngSubmit)="onSubmit($event)">
+            <div class="auth-logo d-flex justify-content-center">
+              <div class="logo-icon steg-logo">
+                <i class="ti ti-bolt"></i>
+              </div>
+            </div>
+            <div class="auth-header text-center mt-4">
+              <h2><b>STEG</b></h2>
+              <p class="mt-2">Tableau de bord - Encadrant</p>
+            </div>
+
+            @if (error()) {
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+              <i class="ti ti-alert-circle me-2"></i>
+              <div>{{ error() }}</div>
+            </div>
+            }
+
+            <div class="form-floating mb-3" [class.form-loading]="loading()">
+              <input type="email" class="form-control" id="floatingInput"
+                [class.is-invalid]="submitted() && loginForm.email().invalid()" placeholder="Email"
+                [formField]="loginForm.email" />
+              <label for="floatingInput">Adresse email</label>
+              @if (submitted() && loginForm.email().invalid()) {
+              <div class="invalid-feedback">
+                @for (error of loginForm.email().errors(); track error.kind) {
+                <div>{{ error.message }}</div>
+                }
+              </div>
+              }
+            </div>
+
+            <div class="form-floating mb-3 password-field" [class.form-loading]="loading()">
+              <input [type]="showPassword() ? 'text' : 'password'" id="password" class="form-control"
+                [formField]="loginForm.password"
+                [class.is-invalid]="submitted() && loginForm.password().errors().length > 0"
+                placeholder="Mot de passe" />
+              <label for="password">Mot de passe</label>
+              <button type="button" class="password-toggle" (click)="showPassword.set(!showPassword())" tabindex="-1">
+                <i [class]="showPassword() ? 'ti ti-eye-off' : 'ti ti-eye'"></i>
+              </button>
+              @if (submitted() && loginForm.password().errors().length > 0) {
+              <div class="invalid-feedback">
+                @for (error of loginForm.password().errors(); track error.kind) {
+                <div>{{ error.message }}</div>
+                }
+              </div>
+              }
+            </div>
+
+            <div class="d-flex mt-1 justify-content-between align-items-center">
+              <div class="form-check">
+                <input class="form-check-input input-primary" type="checkbox" id="rememberMe" />
+                <label class="form-check-label text-muted" for="rememberMe">Se souvenir de moi</label>
+              </div>
+              <a href="javascript:void(0)" class="forgot-link">Mot de passe oublié ?</a>
+            </div>
+
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-primary-custom" [disabled]="loading()">
+                @if (loading()) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Connexion en cours...
+                } @else {
+                Se connecter
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

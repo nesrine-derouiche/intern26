@@ -1,0 +1,87 @@
+<section class="hero">
+  <div class="container hero__inner">
+    <div class="hero__content">
+      <span class="hero__badge" appReveal>
+        <app-icon name="sparkles" />
+        Programme de stages 2026 — Candidatures ouvertes
+      </span>
+
+      <h1 class="hero__title" appReveal [delay]="80">
+        Bâtissez votre carrière dans le secteur de
+        <span class="accent">l&rsquo;énergie</span>
+      </h1>
+
+      <p class="hero__subtitle" appReveal [delay]="160">
+        Rejoignez la Société Tunisienne de l&rsquo;Électricité et du Gaz et vivez
+        une expérience professionnelle enrichissante : missions concrètes,
+        encadrement de qualité et opportunités de carrière.
+      </p>
+
+      <div class="hero__actions" appReveal [delay]="240">
+        <a class="btn btn--ghost" routerLink="/offres">
+          Découvrir les offres
+          <app-icon name="arrow-right" />
+        </a>
+        <a class="btn btn--primary" routerLink="/inscription" style="background: #fff; color: var(--color-primary-dark)">
+          <app-icon name="plus" />
+          Créer un compte
+        </a>
+      </div>
+
+      <ul class="hero__trust" appReveal [delay]="320">
+        <li class="hero__trust-item"><app-icon name="check-circle" /> Entreprise publique</li>
+        <li class="hero__trust-item"><app-icon name="check-circle" /> Encadrement personnalisé</li>
+        <li class="hero__trust-item"><app-icon name="check-circle" /> Candidature gratuite</li>
+      </ul>
+    </div>
+
+    <div class="hero__preview" appReveal [delay]="200">
+      <div class="preview-card" aria-hidden="true">
+        <div class="preview-card__head">
+          <span class="preview-card__logo"><app-icon name="zap" /></span>
+          <div>
+            <div class="preview-card__title">Portail des stages</div>
+            <div class="preview-card__subtitle">Recherchez parmi les dernières offres</div>
+          </div>
+        </div>
+
+        <div class="preview-card__search">
+          <app-icon name="search" />
+          <span>Développeur, énergie, données&hellip;</span>
+        </div>
+
+        <div class="preview-card__list">
+          <div class="preview-offer">
+            <span class="preview-offer__icon"><app-icon name="code" /></span>
+            <div>
+              <div class="preview-offer__title">Développeur Full Stack</div>
+              <div class="preview-offer__meta">DSI — 6 mois · 4 places</div>
+            </div>
+          </div>
+          <div class="preview-offer">
+            <span class="preview-offer__icon"><app-icon name="zap" /></span>
+            <div>
+              <div class="preview-offer__title">Assistant Chef de Projet ENR</div>
+              <div class="preview-offer__meta">Projets — 6 mois · 5 places</div>
+            </div>
+          </div>
+          <div class="preview-offer">
+            <span class="preview-offer__icon"><app-icon name="network" /></span>
+            <div>
+              <div class="preview-offer__title">Ingénieur Réseaux &amp; Télécoms</div>
+              <div class="preview-offer__meta">Transport — 4 mois · 3 places</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-chip" aria-hidden="true">
+        <span class="preview-chip__icon"><app-icon name="trending-up" /></span>
+        <div>
+          <div class="preview-chip__value">420+ stages</div>
+          <div class="preview-chip__label">dans 24 directions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

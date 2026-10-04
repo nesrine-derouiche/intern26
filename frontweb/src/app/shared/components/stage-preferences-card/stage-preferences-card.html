@@ -1,0 +1,167 @@
+@if (isValidated()) {
+  <section class="sp" aria-label="Période de stage validée">
+    <header class="sp__head">
+      <h3 class="sp__title">
+        <app-icon name="calendar" />
+        Préparation du stage
+      </h3>
+    </header>
+
+    <div class="sp__done sp__done--validated">
+      <p class="sp__done-line">
+        <app-icon name="check-circle" />
+        Votre période de stage a été validée par RH.
+      </p>
+      <p class="sp__done-line">
+        <app-icon name="calendar" />
+        Date de début&nbsp;:
+        <span class="sp__done-value">{{ formatDate(saved()?.internship_start_date ?? '') }}</span>
+      </p>
+      <p class="sp__done-line">
+        <app-icon name="clock" />
+        Durée&nbsp;:
+        <span class="sp__done-value">
+          {{ durationLabel(saved()?.internship_duration_months ?? 0) }}
+        </span>
+      </p>
+      <p class="sp__done-line sp__done-line--info">
+        <app-icon name="mail" />
+        @if (mobileAccessSent()) {
+          Les informations d'accès à l'application mobile vous ont été envoyées par email.
+        } @else {
+          Votre accès à l'application mobile sera envoyé par email un jour avant le début de votre stage.
+        }
+      </p>
+    </div>
+  </section>
+} @else if (showForm()) {
+  <section class="sp" aria-label="Préparez votre stage">
+    <header class="sp__head">
+      <h3 class="sp__title">
+        <app-icon name="calendar" />
+        Préparez votre stage
+      </h3>
+    </header>
+
+    <p class="sp__intro">
+      Avant de poursuivre votre intégration, veuillez indiquer la date à laquelle vous
+      souhaitez commencer votre stage ainsi que sa durée.
+    </p>
+
+    <div class="sp__fields">
+      <div>
+        <label class="field__label" for="sp-start-date">Date de début du stage</label>
+        <input
+          id="sp-start-date"
+          class="field__input"
+          type="date"
+          [min]="minStartDate"
+          [value]="pickingStart()"
+          (input)="onStartChange($event)"
+        />
+      </div>
+
+      <div>
+        <span class="field__label">Durée du stage</span>
+        <div class="sp__options">
+          @for (option of options; track option) {
+            <button
+              type="button"
+              class="sp__option"
+              [class.sp__option--active]="!showCustom() && months() === option"
+              (click)="selectMonths(option)"
+            >
+              {{ durationLabel(option) }}
+            </button>
+          }
+          <button
+            type="button"
+            class="sp__option"
+            [class.sp__option--active]="showCustom()"
+            (click)="toggleCustom()"
+          >
+            Autre
+          </button>
+        </div>
+      </div>
+    </div>
+
+    @if (showCustom()) {
+      <div>
+        <label class="field__label" for="sp-custom-months">Durée personnalisée (en mois)</label>
+        <input
+          id="sp-custom-months"
+          class="field__input"
+          type="number"
+          min="1"
+          max="24"
+          placeholder="Ex. 6"
+          [value]="customMonths() ?? ''"
+          (input)="onCustomChange($event)"
+        />
+      </div>
+    }
+
+    @if (error(); as message) {
+      <p class="sp__error" role="alert">
+        <app-icon name="alert-triangle" />
+        {{ message }}
+      </p>
+    }
+
+    <div class="sp__actions">
+      <button type="button" class="btn btn--primary" [disabled]="submitting()" (click)="submit()">
+        @if (submitting()) {
+          <app-icon name="loader" />
+          Enregistrement…
+        } @else {
+          <app-icon name="check" />
+          Confirmer la période de stage
+        }
+      </button>
+    </div>
+  </section>
+} @else if (saved(); as prefs) {
+  <section class="sp" aria-label="Préparation du stage enregistrée">
+    <header class="sp__head">
+      <h3 class="sp__title">
+        <app-icon name="calendar" />
+        Préparation du stage
+      </h3>
+    </header>
+
+    <div class="sp__done">
+      @if (isModificationRequested()) {
+        <p class="sp__done-line sp__done-line--warn">
+          <app-icon name="alert-triangle" />
+          Votre période de stage doit être modifiée.
+        </p>
+        <p class="sp__done-line">
+          <app-icon name="info" />
+          Le RH vous demande de revoir la date de début et la durée de votre stage, puis de resoumettre.
+        </p>
+      } @else {
+        <p class="sp__done-line">
+          <app-icon name="clock" />
+          Votre période de stage est en attente de validation par RH.
+        </p>
+      }
+      <p class="sp__done-line">
+        <app-icon name="calendar" />
+        Date de début&nbsp;:
+        <span class="sp__done-value">{{ formatDate(prefs.internship_start_date ?? '') }}</span>
+      </p>
+      <p class="sp__done-line">
+        <app-icon name="clock" />
+        Durée&nbsp;:
+        <span class="sp__done-value">
+          {{ durationLabel(prefs.internship_duration_months ?? 0) }}
+        </span>
+      </p>
+    </div>
+
+    <button type="button" class="btn btn--outline sp__modify" (click)="startEditing()">
+      Modifier mes préférences
+    </button>
+  </section>
+}

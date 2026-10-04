@@ -1,0 +1,131 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-1">Gestion des Candidatures</h4>
+      <p class="text-muted mb-0">Consultez et gérez les candidatures aux offres de stage</p>
+    </div>
+    <button class="btn btn-primary-custom" (click)="openAdd()">
+      <i class="ti ti-plus me-1"></i> Nouvelle candidature
+    </button>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent"><i class="ti ti-search"></i></span>
+          <input type="text" class="form-control" placeholder="Rechercher..."
+            [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="btn-group w-100" role="group">
+          <input type="radio" class="btn-check" name="filterStatus" id="fAll" value="tous" [checked]="filterStatus()==='tous'" (change)="filterStatus.set('tous')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fAll">Toutes</label>
+          <input type="radio" class="btn-check" name="filterStatus" id="fEA" value="EN_ATTENTE" [checked]="filterStatus()==='EN_ATTENTE'" (change)="filterStatus.set('EN_ATTENTE')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fEA">En attente</label>
+          <input type="radio" class="btn-check" name="filterStatus" id="fAC" value="ACCEPTEE" [checked]="filterStatus()==='ACCEPTEE'" (change)="filterStatus.set('ACCEPTEE')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fAC">Acceptées</label>
+          <input type="radio" class="btn-check" name="filterStatus" id="fRE" value="REFUSEE" [checked]="filterStatus()==='REFUSEE'" (change)="filterStatus.set('REFUSEE')" />
+          <label class="btn btn-outline-secondary btn-sm" for="fRE">Refusées</label>
+        </div>
+      </div>
+      <div class="col-md-4 text-end"><span class="text-muted">{{ filtered().length }} candidature(s)</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr><th>Stagiaire</th><th>Offre</th><th>Département</th><th>Date</th><th>Statut</th><th class="text-center">Actions</th></tr>
+        </thead>
+        <tbody>
+          @for (c of filtered(); track c.id) {
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar avatar-sm bg-light-primary me-3">
+                  <span class="text-primary fw-bold">{{ displayName(c).charAt(0) || '?' }}</span>
+                </div>
+                <div>
+                  <h6 class="mb-0">{{ displayName(c) || '—' }}</h6>
+                </div>
+              </div>
+            </td>
+            <td><span class="fw-medium">{{ c.offre_titre }}</span></td>
+            <td><span class="text-muted">{{ c.departement_nom }}</span></td>
+            <td><span class="text-muted">{{ c.date_candidature | date:'dd/MM/yyyy' }}</span></td>
+            <td>
+              <div class="dropdown">
+                <button class="btn btn-sm dropdown-toggle" [class]="getStatutBadge(c.statut)" data-bs-toggle="dropdown">
+                  {{ getStatutLabel(c.statut) }}
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" (click)="acceptForAiInterview(c.id)">Accepter pour entretien IA</a></li>
+                  <li><a class="dropdown-item" (click)="updateStatut(c.id, 'EN_ATTENTE')">En attente</a></li>
+                  <li><a class="dropdown-item" (click)="updateStatut(c.id, 'ACCEPTEE')">Accepter</a></li>
+                  <li><a class="dropdown-item text-danger" (click)="updateStatut(c.id, 'REFUSEE')">Refuser</a></li>
+                </ul>
+              </div>
+            </td>
+            <td class="text-center">
+              @if (c.statut === 'AI_INTERVIEW_PASSED' || c.statut === 'RH_ACCEPTED') {
+                <button class="btn btn-sm btn-outline-success me-1" title="Envoyer le lien de l'entretien humain par email"
+                  (click)="sendInterviewLink(c.id)" [disabled]="loading()">
+                  <i class="ti ti-send"></i>
+                </button>
+              }
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(c.id)"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+          } @empty {
+          <tr><td colspan="6" class="text-center text-muted py-4">Aucune candidature trouvée</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (showModal()) {
+<div class="modal-backdrop-custom" (click)="closeModal()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nouvelle candidature</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+        <div class="mb-3">
+          <label class="form-label">Stagiaire *</label>
+          <select class="form-select" [(ngModel)]="form.stagiaire_id">
+            <option value="">Sélectionner un stagiaire</option>
+            @for (s of stagiaires(); track s.id) { <option [value]="s.id">{{ s.prenom }} {{ s.nom }}</option> }
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Offre de stage *</label>
+          <select class="form-select" [(ngModel)]="form.offre_id">
+            <option value="">Sélectionner une offre</option>
+            @for (o of offres(); track o.id) { <option [value]="o.id">{{ o.titre }} — {{ o.departement_nom }}</option> }
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="save()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Créer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

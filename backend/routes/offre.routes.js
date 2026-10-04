@@ -1,0 +1,15 @@
+const express = require('express');
+const router = express.Router();
+const c = require('../controllers/offre.controller');
+const { authenticateToken: auth } = require('../middlewares/auth.middleware');
+const { requireRole: role } = require('../middlewares/role.middleware');
+const { withScope } = require('../middlewares/authorization.middleware');
+const { createOfferValidation } = require('../validators/offer.validator');
+const { validate } = require('../validators');
+router.use(auth, withScope);
+router.get('/', c.getAll);
+router.post('/', role('ADMIN', 'RH'), createOfferValidation, validate, c.create);
+router.put('/:id', role('ADMIN', 'RH'), c.update);
+router.delete('/:id', role('ADMIN', 'RH'), c.delete);
+router.post('/:id/analyse-cv', role('CANDIDAT'), c.analyseCv);
+module.exports = router;

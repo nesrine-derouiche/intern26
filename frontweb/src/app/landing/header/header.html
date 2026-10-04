@@ -1,0 +1,82 @@
+<header class="header" [class.is-scrolled]="scrolled()">
+  <div class="container header__inner">
+    <a class="brand" routerLink="/" aria-label="STEG Internship — accueil">
+      <span class="brand__logo">
+        <app-icon name="zap" />
+      </span>
+      <span class="brand__text">
+        <span class="brand__name">STEG Internship</span>
+        <span class="brand__tag">Stages &amp; carrières</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Navigation principale">
+      <a class="nav__link" routerLink="/" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="is-active">
+        Accueil
+      </a>
+      <a class="nav__link" routerLink="/" [fragment]="'pourquoi'">Pourquoi STEG</a>
+      <a class="nav__link" routerLink="/" [fragment]="'chiffres'">Chiffres</a>
+      <a class="nav__link" routerLink="/" [fragment]="'domaines'">Domaines</a>
+      <a class="nav__link" routerLink="/offres" routerLinkActive="is-active">Offres</a>
+    </nav>
+
+    <div class="header__actions">
+      @if (isAuthenticated()) {
+        <a class="btn btn--outline btn--sm" routerLink="/mes-candidatures">
+          <app-icon name="briefcase" />
+          Mes candidatures
+        </a>
+        <a class="btn btn--primary btn--sm" routerLink="/mon-profil">
+          <app-icon name="user" />
+          {{ fullName() }}
+        </a>
+        <a class="btn btn--outline btn--sm" routerLink="/" (click)="logout()">
+          <app-icon name="log-out" />
+          Déconnexion
+        </a>
+      } @else {
+        <a class="btn btn--outline btn--sm" routerLink="/connexion">
+          Se connecter
+        </a>
+        <a class="btn btn--primary btn--sm" routerLink="/inscription">
+          Créer un compte
+        </a>
+      }
+      <button
+        class="nav__toggle"
+        [attr.aria-expanded]="menuOpen()"
+        aria-label="Ouvrir le menu"
+        (click)="menuOpen.set(!menuOpen())"
+      >
+        <app-icon [name]="menuOpen() ? 'close' : 'menu'" />
+      </button>
+    </div>
+  </div>
+
+  @if (menuOpen()) {
+    <nav class="mobile-menu" aria-label="Navigation mobile">
+      <a class="mobile-menu__link" routerLink="/" (click)="menuOpen.set(false)">Accueil</a>
+      <a class="mobile-menu__link" routerLink="/" [fragment]="'pourquoi'" (click)="menuOpen.set(false)">Pourquoi STEG</a>
+      <a class="mobile-menu__link" routerLink="/" [fragment]="'chiffres'" (click)="menuOpen.set(false)">Chiffres</a>
+      <a class="mobile-menu__link" routerLink="/" [fragment]="'domaines'" (click)="menuOpen.set(false)">Domaines</a>
+      <a class="mobile-menu__link" routerLink="/offres" (click)="menuOpen.set(false)">Offres</a>
+      @if (isAuthenticated()) {
+        <a class="mobile-menu__link" routerLink="/mes-candidatures" (click)="menuOpen.set(false)">
+          <app-icon name="briefcase" />
+          Mes candidatures
+        </a>
+        <a class="mobile-menu__link" routerLink="/mon-profil" (click)="menuOpen.set(false)">
+          <app-icon name="user" />
+          Mon profil
+        </a>
+        <a class="btn btn--primary btn--sm mobile-menu__btn" routerLink="/" (click)="logout()">
+          Déconnexion
+        </a>
+      } @else {
+        <a class="btn btn--primary btn--sm mobile-menu__btn" routerLink="/inscription" (click)="menuOpen.set(false)">
+          Créer un compte
+        </a>
+      }
+    </nav>
+  }
+</header>

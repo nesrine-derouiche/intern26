@@ -1,0 +1,56 @@
+<app-landing-header />
+
+<main class="auth-shell">
+  <div class="auth-card">
+    <header class="auth-card__head">
+      <span class="auth-card__icon"><app-icon name="mail" /></span>
+      <h1 class="auth-card__title">Mot de passe oublié</h1>
+      <p class="auth-card__subtitle">
+        Indiquez votre adresse email : nous vous enverrons un lien de réinitialisation.
+      </p>
+    </header>
+
+    @if (sent()) {
+      <div class="auth-alert auth-alert--success" role="status">
+        Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.
+      </div>
+      <a class="btn btn--outline btn--block" routerLink="/connexion">Retour à la connexion</a>
+    } @else {
+      @if (error(); as message) {
+        <div class="auth-alert auth-alert--error" role="alert">{{ message }}</div>
+      }
+
+      <form (ngSubmit)="onSubmit()">
+        <div class="field">
+          <label class="field__label" for="email">Adresse email</label>
+          <input
+            class="field__input"
+            id="email"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="vous@exemple.tn"
+            [ngModel]="email()"
+            (ngModelChange)="email.set($event)"
+          />
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit" [disabled]="submitting()">
+          @if (submitting()) {
+            <app-icon name="loader" />
+            Envoi…
+          } @else {
+            Envoyer le lien
+          }
+        </button>
+      </form>
+
+      <div class="auth-switch">
+        <a routerLink="/connexion">Retour à la connexion</a>
+      </div>
+    }
+  </div>
+</main>
+
+<app-landing-footer />
