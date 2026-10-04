@@ -14,39 +14,10 @@ class SplashScreen extends ConsumerWidget {
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primaryDark, AppColors.primary, Color(0xFF3B9DFF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            stops: [0, 0.55, 1],
-          ),
+          color: AppColors.primary,
         ),
         child: Stack(
           children: [
-            Positioned(
-              top: -120,
-              right: -100,
-              child: Container(
-                width: 320,
-                height: 320,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.06),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: -140,
-              left: -120,
-              child: Container(
-                width: 360,
-                height: 360,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-              ),
-            ),
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -86,7 +57,7 @@ class SplashScreen extends ConsumerWidget {
                       color: Colors.white,
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: -0.6,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(height: 6),

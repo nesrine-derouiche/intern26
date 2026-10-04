@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
-/// Material 3 design system — Inter typography, an enterprise blue palette,
-/// large touch targets and iOS-native surfaces. Dark mode is fully supported.
+/// Material 3 design system shared by every STEG surface.
 class AppTheme {
   AppTheme._();
 
   static const String fontFamily = 'Inter';
-  static const double radius = 22;
-  static const double radiusLg = 28;
-  static const double radiusSm = 16;
+  static const double radius = 16;
+  static const double radiusLg = 18;
+  static const double radiusSm = 12;
   static const double radiusPill = 999;
 
   static ThemeData get light => _build(Brightness.light);
@@ -24,15 +23,15 @@ class AppTheme {
       brightness: brightness,
       surface: AppColors.surface,
     ).copyWith(
-      primary: isLight ? AppColors.primary : const Color(0xFF6CB3FF),
+      primary: isLight ? AppColors.primary : const Color(0xFF8BC4F4),
       onPrimary: isLight ? Colors.white : const Color(0xFF00315F),
-      primaryContainer: isLight ? const Color(0xFFD8E9FB) : const Color(0xFF004A94),
-      onPrimaryContainer: isLight ? const Color(0xFF00315F) : const Color(0xFFCFE6FF),
+      primaryContainer: isLight ? AppColors.primaryTint : const Color(0xFF16496C),
+      onPrimaryContainer: isLight ? AppColors.primary : const Color(0xFFD7ECFF),
       secondary: isLight ? AppColors.success : const Color(0xFF4DE38B),
       onSecondary: Colors.white,
       secondaryContainer: isLight ? const Color(0xFFD7F5E1) : const Color(0xFF0E5130),
       onSecondaryContainer: isLight ? const Color(0xFF0B4A26) : const Color(0xFFAEF7C8),
-      tertiary: AppColors.warning,
+      tertiary: AppColors.electricBlue,
       onTertiary: Colors.white,
       surface: isLight ? AppColors.surface : const Color(0xFF151D2C),
       surfaceContainerLowest: isLight ? AppColors.surface : const Color(0xFF101827),
@@ -46,7 +45,7 @@ class AppTheme {
       onSurfaceVariant: isLight ? AppColors.textSecondary : const Color(0xFF94A3B8),
       error: AppColors.danger,
       onError: Colors.white,
-      shadow: isLight ? const Color(0x140F1728) : const Color(0x66000000),
+      shadow: isLight ? const Color(0x140F2740) : const Color(0x66000000),
     );
 
     return ThemeData(
@@ -78,7 +77,7 @@ class AppTheme {
           fontFamily: fontFamily,
           fontSize: 20,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.3,
+          letterSpacing: 0,
           color: colorScheme.onSurface,
         ),
         toolbarHeight: 60,
@@ -146,7 +145,7 @@ class AppTheme {
             fontFamily: fontFamily,
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.1,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -246,7 +245,7 @@ class AppTheme {
           fontFamily: fontFamily,
           fontSize: 18,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.2,
+          letterSpacing: 0,
           color: colorScheme.onSurface,
         ),
         contentTextStyle: TextStyle(

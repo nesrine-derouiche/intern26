@@ -1,14 +1,10 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/dashboard/dashboard_providers.dart';
 
-/// Shell that hosts the five main destinations behind a frosted-glass
-/// Material 3 [NavigationBar]: Accueil, Calendrier, Tâches, Notifications,
-/// Profil.
+/// Shell for the five primary destinations.
 ///
 /// Each branch keeps its own navigator and state via the animated
 /// [FadingBranchContainer], so switching tabs never loses the scroll
@@ -27,32 +23,11 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final unread = ref.watch(unreadCountProvider).value ?? 0;
     final index = navigationShell.currentIndex;
 
-    return Scaffold(
-      body: navigationShell,
-      extendBody: true,
-      bottomNavigationBar: ClipRect(
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withValues(alpha: 0.82),
-              border: Border(
-                top: BorderSide(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: NavigationBar(
-                selectedIndex: index,
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                onDestinationSelected: _onDestinationSelected,
-                destinations: [
+    final wide = MediaQuery.sizeOf(context).width >= 700;
+    final destinations = [
                   const NavigationDestination(
                     icon: Icon(Icons.home_outlined),
                     selectedIcon: Icon(Icons.home),
@@ -80,18 +55,51 @@ class AppShell extends ConsumerWidget {
                       showBadge: index != 0,
                     ),
                     label: 'Notifications',
+                    tooltip: 'Notifications',
                   ),
                   const NavigationDestination(
                     icon: Icon(Icons.person_outline),
                     selectedIcon: Icon(Icons.person),
                     label: 'Profil',
                   ),
-                ],
+                ];
+
+    return Scaffold(
+      body: wide
+          ? Row(
+              children: [
+                SafeArea(
+                  right: false,
+                  child: NavigationRail(
+                    selectedIndex: index,
+                    labelType: NavigationRailLabelType.all,
+                    onDestinationSelected: _onDestinationSelected,
+                    destinations: destinations
+                        .map(
+                          (destination) => NavigationRailDestination(
+                            icon: destination.icon,
+                            selectedIcon: destination.selectedIcon,
+                            label: Text(destination.label),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(child: navigationShell),
+              ],
+            )
+          : navigationShell,
+      bottomNavigationBar: wide
+          ? null
+          : SafeArea(
+              top: false,
+              child: NavigationBar(
+                selectedIndex: index,
+                onDestinationSelected: _onDestinationSelected,
+                destinations: destinations,
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

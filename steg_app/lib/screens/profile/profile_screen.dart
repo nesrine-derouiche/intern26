@@ -125,24 +125,10 @@ class _ProfileHeader extends StatelessWidget {
                 height: 84,
                 width: double.infinity,
                 decoration: const BoxDecoration(
-                  gradient: AppColors.brandGradient,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(AppTheme.radiusLg),
                   ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -24,
-                      top: -40,
-                      child: _DecorativeCircle(size: 130, opacity: 0.1),
-                    ),
-                    Positioned(
-                      right: 90,
-                      bottom: -50,
-                      child: _DecorativeCircle(size: 110, opacity: 0.08),
-                    ),
-                  ],
                 ),
               ),
               Positioned(
@@ -541,25 +527,6 @@ class _ProgressCardSkeleton extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _DecorativeCircle extends StatelessWidget {
-  const _DecorativeCircle({required this.size, required this.opacity});
-
-  final double size;
-  final double opacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: opacity),
       ),
     );
   }

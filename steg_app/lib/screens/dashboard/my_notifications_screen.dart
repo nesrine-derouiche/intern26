@@ -30,6 +30,11 @@ class MyNotificationsScreen extends ConsumerWidget {
         ),
         title: const Text('Centre de notifications'),
         actions: [
+          const IconButton(
+            onPressed: null,
+            tooltip: 'Notifications',
+            icon: Icon(Icons.notifications_outlined),
+          ),
           if (unread > 0)
             TextButton.icon(
               onPressed: notifier.markAllAsRead,

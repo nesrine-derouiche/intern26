@@ -22,7 +22,7 @@ class QuickActionItem {
   final bool dot;
 }
 
-/// Compact, tappable tile with a gradient icon and an optional unread dot.
+/// Compact, tappable tile with a clear icon and an optional unread dot.
 class QuickActionTile extends StatefulWidget {
   const QuickActionTile({
     super.key,
@@ -56,6 +56,7 @@ class _QuickActionTileState extends State<QuickActionTile> {
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
             boxShadow: AppColors.softShadowSmall,
           ),
           child: Column(
@@ -68,24 +69,10 @@ class _QuickActionTileState extends State<QuickActionTile> {
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          item.color,
-                          item.color.withValues(alpha: 0.72),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: item.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: item.color.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
-                    child: Icon(item.icon, size: 22, color: Colors.white),
+                    child: Icon(item.icon, size: 22, color: item.color),
                   ),
                   if (item.dot)
                     Positioned(

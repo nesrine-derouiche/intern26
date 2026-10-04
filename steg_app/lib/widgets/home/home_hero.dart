@@ -7,8 +7,7 @@ import '../../models/user.dart';
 import '../common/animated_progress.dart';
 import '../common/app_avatar.dart';
 
-/// Gradient hero header — avatar, welcome message, role badge and the
-/// current internship summary for stagiaires.
+/// Branded header with the current internship summary for stagiaires.
 class HomeHero extends StatelessWidget {
   const HomeHero({
     super.key,
@@ -35,7 +34,7 @@ class HomeHero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppColors.brandGradient,
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(AppTheme.radius),
         boxShadow: [
           BoxShadow(
@@ -47,23 +46,6 @@ class HomeHero extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Positioned(
-            right: -30,
-            top: -40,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.16),
-                    Colors.white.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-            ),
-          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -86,7 +68,7 @@ class HomeHero extends StatelessWidget {
                             color: Colors.white,
                             fontSize: 21,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: -0.4,
+                            letterSpacing: 0,
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -240,8 +222,8 @@ class _HeroPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: Colors.white),
-          const SizedBox(width: 5),
+          Icon(icon, size: 15, color: Colors.white),
+          const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(

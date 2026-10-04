@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 
-/// Premium card — soft shadow, generous 28px radius, no heavy borders.
-/// Optional tap feedback via [onTap]; interactive cards gently lift and
-/// deepen their shadow while hovered.
+/// Shared surface with restrained elevation and optional tap feedback.
 class AppCard extends StatefulWidget {
   const AppCard({
     super.key,
@@ -58,6 +56,7 @@ class _AppCardState extends State<AppCard> {
         decoration: BoxDecoration(
           color: effectiveColor,
           borderRadius: borderRadius,
+          border: Border.all(color: theme.colorScheme.outlineVariant),
           boxShadow: effectiveShadow,
         ),
         padding: widget.padding,
@@ -83,6 +82,7 @@ class _AppCardState extends State<AppCard> {
             decoration: BoxDecoration(
               color: effectiveColor,
               borderRadius: borderRadius,
+              border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
             child: InkWell(
               onTap: widget.onTap,

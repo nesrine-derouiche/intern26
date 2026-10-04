@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 
-/// Section header used inside grouped lists: gradient icon + title + count pill.
+/// Section header used inside grouped lists.
 class AppSectionHeader extends StatelessWidget {
   const AppSectionHeader({
     super.key,
@@ -28,14 +28,8 @@ class AppSectionHeader extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              gradient: color == AppColors.primary
-                  ? AppColors.brandGradient
-                  : LinearGradient(
-                      colors: [color, color.withValues(alpha: 0.8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-              borderRadius: BorderRadius.circular(11),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 18, color: Colors.white),
           ),
@@ -44,7 +38,6 @@ class AppSectionHeader extends StatelessWidget {
             title,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
-              letterSpacing: -0.2,
             ),
           ),
           if (count != null) ...[
