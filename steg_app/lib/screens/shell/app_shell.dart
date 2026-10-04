@@ -92,14 +92,139 @@ class AppShell extends ConsumerWidget {
           : navigationShell,
       bottomNavigationBar: wide
           ? null
-          : SafeArea(
-              top: false,
-              child: NavigationBar(
-                selectedIndex: index,
-                onDestinationSelected: _onDestinationSelected,
-                destinations: destinations,
-              ),
+          : _FloatingBottomBar(
+              selectedIndex: index,
+              destinations: destinations,
+              onDestinationSelected: _onDestinationSelected,
             ),
+    );
+  }
+}
+
+class _FloatingBottomBar extends StatelessWidget {
+  const _FloatingBottomBar({
+    required this.selectedIndex,
+    required this.destinations,
+    required this.onDestinationSelected,
+  });
+
+  final int selectedIndex;
+  final List<NavigationDestination> destinations;
+  final ValueChanged<int> onDestinationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    if (bottomInset > 0) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+      child: Container(
+        height: 72,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A12304A),
+              blurRadius: 20,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            for (var i = 0; i < destinations.length; i++)
+              Expanded(
+                child: _FloatingDestination(
+                  destination: destinations[i],
+                  selected: i == selectedIndex,
+                  onTap: () => onDestinationSelected(i),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingDestination extends StatelessWidget {
+  const _FloatingDestination({
+    required this.destination,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final NavigationDestination destination;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final label = destination.label;
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      child: Tooltip(
+        message: destination.tooltip ?? label,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            decoration: BoxDecoration(
+              color: selected
+                  ? theme.colorScheme.primaryContainer
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  transitionBuilder: (child, animation) => ScaleTransition(
+                    scale: animation,
+                    child: child,
+                  ),
+                  child: selected
+                      ? KeyedSubtree(
+                          key: const ValueKey('selected'),
+                              child: destination.selectedIcon ?? destination.icon,
+                        )
+                      : KeyedSubtree(
+                          key: const ValueKey('unselected'),
+                          child: destination.icon,
+                        ),
+                ),
+                if (selected) ...[
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
