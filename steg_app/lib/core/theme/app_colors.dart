@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF12304A);
+  static const Color primary = Color(0xFF1769AA);
 
   /// Deeper brand blue used as the gradient partner on hero surfaces.
-  static const Color primaryDark = Color(0xFF0B2135);
+  static const Color primaryDark = Color(0xFF12304A);
 
   /// Pale brand tint used for containers, chips and selected states.
-  static const Color corporateBlue = Color(0xFF1769AA);
-  static const Color electricBlue = Color(0xFF2F80ED);
-  static const Color primaryTint = Color(0xFFE8F1F8);
+  static const Color corporateBlue = Color(0xFF2F80ED);
+  static const Color electricBlue = Color(0xFF4A9AF5);
+  static const Color primaryTint = Color(0xFFEAF4FC);
 
   /// Secondary accents kept for data-viz and icon variety.
   static const Color violet = Color(0xFF52728C);

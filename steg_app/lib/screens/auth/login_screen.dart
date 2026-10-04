@@ -71,10 +71,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               padding: EdgeInsets.symmetric(
                 horizontal: constraints.maxWidth < 420 ? 20 : 32,
                 vertical: compact ? 20 : 40,
+              ).copyWith(
+                bottom: 24 + MediaQuery.viewInsetsOf(context).bottom,
               ),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
+                  constraints: BoxConstraints(
+                    maxWidth: constraints.maxWidth >= 900 ? 520 : 440,
+                  ),
                   child: Form(
                     key: _formKey,
                     child: Column(

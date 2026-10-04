@@ -94,7 +94,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isLight ? AppColors.surfaceTone : const Color(0xFF1D2838),
+        fillColor: isLight ? const Color(0xFFF1F6FB) : const Color(0xFF1D2838),
         hintStyle: TextStyle(
           color: isLight ? AppColors.textTertiary : const Color(0xFF64748B),
           fontWeight: FontWeight.w500,
