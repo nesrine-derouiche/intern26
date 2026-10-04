@@ -26,43 +26,45 @@ class AppShell extends ConsumerWidget {
     final unread = ref.watch(unreadCountProvider).value ?? 0;
     final index = navigationShell.currentIndex;
 
-    final wide = MediaQuery.sizeOf(context).width >= 700;
+    final width = MediaQuery.sizeOf(context).width;
+    final wide = width >= 700;
+    final narrow = width < 380;
     final destinations = [
-                  const NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home),
-                    label: 'Accueil',
-                  ),
-                  const NavigationDestination(
-                    icon: Icon(Icons.calendar_month_outlined),
-                    selectedIcon: Icon(Icons.calendar_month),
-                    label: 'Agenda',
-                  ),
-                  const NavigationDestination(
-                    icon: Icon(Icons.checklist_outlined),
-                    selectedIcon: Icon(Icons.checklist),
-                    label: 'Tâches',
-                  ),
-                  NavigationDestination(
-                    icon: _NotificationIcon(
-                      icon: Icons.notifications_outlined,
-                      unread: unread,
-                      showBadge: index != 0,
-                    ),
-                    selectedIcon: _NotificationIcon(
-                      icon: Icons.notifications,
-                      unread: unread,
-                      showBadge: index != 0,
-                    ),
-                    label: 'Notifications',
-                    tooltip: 'Notifications',
-                  ),
-                  const NavigationDestination(
-                    icon: Icon(Icons.person_outline),
-                    selectedIcon: Icon(Icons.person),
-                    label: 'Profil',
-                  ),
-                ];
+      const NavigationDestination(
+        icon: Icon(Icons.home_outlined),
+        selectedIcon: Icon(Icons.home),
+        label: 'Accueil',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.calendar_month_outlined),
+        selectedIcon: Icon(Icons.calendar_month),
+        label: 'Agenda',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.checklist_outlined),
+        selectedIcon: Icon(Icons.checklist),
+        label: 'Tâches',
+      ),
+      NavigationDestination(
+        icon: _NotificationIcon(
+          icon: Icons.notifications_outlined,
+          unread: unread,
+          showBadge: index != 0,
+        ),
+        selectedIcon: _NotificationIcon(
+          icon: Icons.notifications,
+          unread: unread,
+          showBadge: index != 0,
+        ),
+        label: 'Notifications',
+        tooltip: 'Notifications',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.person_outline),
+        selectedIcon: Icon(Icons.person),
+        label: 'Profil',
+      ),
+    ];
 
     return Scaffold(
       body: wide
@@ -92,153 +94,17 @@ class AppShell extends ConsumerWidget {
           : navigationShell,
       bottomNavigationBar: wide
           ? null
-          : _FloatingBottomBar(
-              selectedIndex: index,
-              destinations: destinations,
-              onDestinationSelected: _onDestinationSelected,
-            ),
-    );
-  }
-}
-
-class _FloatingBottomBar extends StatelessWidget {
-  const _FloatingBottomBar({
-    required this.selectedIndex,
-    required this.destinations,
-    required this.onDestinationSelected,
-  });
-
-  final int selectedIndex;
-  final List<NavigationDestination> destinations;
-  final ValueChanged<int> onDestinationSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    if (bottomInset > 0) return const SizedBox.shrink();
-
-    final theme = Theme.of(context);
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(12, 4, 12, 10),
-      child: Container(
-        height: 72,
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1A12304A),
-              blurRadius: 20,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            for (var i = 0; i < destinations.length; i++)
-              Expanded(
-                child: _FloatingDestination(
-                  destination: destinations[i],
-                  compactLabel: _compactLabel(i),
-                  selected: i == selectedIndex,
-                  onTap: () => onDestinationSelected(i),
-                ),
+          : SafeArea(
+              top: false,
+              child: NavigationBar(
+                selectedIndex: index,
+                labelBehavior: narrow
+                    ? NavigationDestinationLabelBehavior.onlyShowSelected
+                    : NavigationDestinationLabelBehavior.alwaysShow,
+                onDestinationSelected: _onDestinationSelected,
+                destinations: destinations,
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _compactLabel(int index) {
-    return switch (index) {
-      0 => 'Accueil',
-      1 => 'Agenda',
-      2 => 'Tâches',
-      3 => 'Alertes',
-      _ => 'Profil',
-    };
-  }
-}
-
-class _FloatingDestination extends StatelessWidget {
-  const _FloatingDestination({
-    required this.destination,
-    required this.compactLabel,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final NavigationDestination destination;
-  final String compactLabel;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Semantics(
-      selected: selected,
-      button: true,
-      label: destination.label,
-      child: Tooltip(
-        message: destination.tooltip ?? destination.label,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            padding: EdgeInsets.symmetric(
-              horizontal: selected ? 10 : 6,
             ),
-            decoration: BoxDecoration(
-              color: selected
-                  ? theme.colorScheme.primaryContainer
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 160),
-                  transitionBuilder: (child, animation) => ScaleTransition(
-                    scale: animation,
-                    child: child,
-                  ),
-                  child: selected
-                      ? KeyedSubtree(
-                          key: const ValueKey('selected'),
-                              child: destination.selectedIcon ?? destination.icon,
-                        )
-                      : KeyedSubtree(
-                          key: const ValueKey('unselected'),
-                          child: destination.icon,
-                        ),
-                ),
-                if (selected) ...[
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      compactLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -319,7 +185,10 @@ class _FadingBranchContainerState extends State<FadingBranchContainer>
             offstage: i != widget.currentIndex,
             child: TickerMode(
               enabled: i == widget.currentIndex,
-              child: FadeTransition(opacity: _opacity, child: widget.children[i]),
+              child: FadeTransition(
+                opacity: _opacity,
+                child: widget.children[i],
+              ),
             ),
           ),
       ],

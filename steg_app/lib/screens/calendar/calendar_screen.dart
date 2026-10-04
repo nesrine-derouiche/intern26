@@ -79,16 +79,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).value?.session?.user;
     final eventsAsync = ref.watch(calendarEventsProvider);
+    final compact = MediaQuery.sizeOf(context).width < 390;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Calendrier'),
         actions: [
-          TextButton.icon(
-            onPressed: _goToday,
-            icon: const Icon(Icons.today_outlined, size: 18),
-            label: const Text("Aujourd'hui"),
-          ),
+          compact
+              ? IconButton(
+                  tooltip: "Aujourd'hui",
+                  onPressed: _goToday,
+                  icon: const Icon(Icons.today_outlined),
+                )
+              : TextButton.icon(
+                  onPressed: _goToday,
+                  icon: const Icon(Icons.today_outlined, size: 18),
+                  label: const Text("Aujourd'hui"),
+                ),
         ],
       ),
       body: _buildBody(context, user, eventsAsync),
@@ -161,12 +168,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   _view == CalendarView.month
                       ? '${monthNamesFr[_monthAnchor.month - 1]} ${_monthAnchor.year}'
                       : 'Semaine du ${formatDateFr(startOfWeek(_anchor))} '
-                          'au ${formatDateFr(startOfWeek(_anchor).add(const Duration(days: 6)))}',
+                            'au ${formatDateFr(startOfWeek(_anchor).add(const Duration(days: 6)))}',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               IconButton(
@@ -196,24 +202,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           const SizedBox(height: 24),
           Row(
             children: [
-              const Icon(Icons.event_outlined, size: 20, color: AppColors.primary),
+              const Icon(
+                Icons.event_outlined,
+                size: 20,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '${weekdayNamesFr[_selected.weekday - 1]} ${formatDateFr(_selected)}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               if (dayEvents.isNotEmpty)
                 Text(
                   '${dayEvents.length} événement${dayEvents.length > 1 ? 's' : ''}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textSecondary),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
             ],
           ),
@@ -231,16 +239,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.event_busy_outlined,
-                      size: 20, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.event_busy_outlined,
+                    size: 20,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Aucun événement ce jour.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ],

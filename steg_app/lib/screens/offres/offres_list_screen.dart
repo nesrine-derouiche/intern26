@@ -71,6 +71,7 @@ class _OffresListScreenState extends ConsumerState<OffresListScreen> {
   @override
   Widget build(BuildContext context) {
     final filters = ref.watch(offresUiProvider);
+    final compact = MediaQuery.sizeOf(context).width < 390;
 
     return Scaffold(
       appBar: AppBar(
@@ -109,11 +110,17 @@ class _OffresListScreenState extends ConsumerState<OffresListScreen> {
                 Badge.count(
                   count: filters.activeFilterCount,
                   isLabelVisible: filters.hasFilters,
-                  child: IconButton.filledTonal(
-                    tooltip: 'Filtres',
-                    onPressed: _openFilters,
-                    icon: const Icon(Icons.tune),
-                  ),
+                  child: compact
+                      ? IconButton.filledTonal(
+                          tooltip: 'Filtres',
+                          onPressed: _openFilters,
+                          icon: const Icon(Icons.tune),
+                        )
+                      : FilledButton.tonalIcon(
+                          onPressed: _openFilters,
+                          icon: const Icon(Icons.tune),
+                          label: const Text('Filtrer'),
+                        ),
                 ),
               ],
             ),
@@ -131,8 +138,10 @@ class _OffresListScreenState extends ConsumerState<OffresListScreen> {
       return ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         itemCount: 5,
-        itemBuilder: (context, index) =>
-            const Padding(padding: EdgeInsets.only(bottom: 12), child: OffreCardSkeleton()),
+        itemBuilder: (context, index) => const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: OffreCardSkeleton(),
+        ),
       );
     }
 
@@ -160,7 +169,9 @@ class _OffresListScreenState extends ConsumerState<OffresListScreen> {
               hasScrollBody: false,
               child: EmptyState(
                 icon: Icons.work_off_outlined,
-                title: hasFilters ? 'Aucun résultat' : 'Aucune offre disponible',
+                title: hasFilters
+                    ? 'Aucun résultat'
+                    : 'Aucune offre disponible',
                 message: hasFilters
                     ? 'Modifiez votre recherche ou vos filtres pour trouver des offres.'
                     : 'Les offres de stage apparaîtront ici dès qu\'elles seront publiées.',
@@ -182,8 +193,9 @@ class _OffresListScreenState extends ConsumerState<OffresListScreen> {
             return Padding(
               padding: const EdgeInsets.only(top: 4),
               child: OutlinedButton.icon(
-                onPressed: () =>
-                    ref.read(offresUiProvider.notifier).loadMore(filtered.length),
+                onPressed: () => ref
+                    .read(offresUiProvider.notifier)
+                    .loadMore(filtered.length),
                 icon: const Icon(Icons.keyboard_arrow_down),
                 label: Text(
                   'Voir plus (${filtered.length - visible.length} '
