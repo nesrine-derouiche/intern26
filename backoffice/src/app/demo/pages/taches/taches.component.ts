@@ -4,6 +4,14 @@ import { SHARED_IMPORTS } from 'src/app/theme/shared/shared.module';
 import { TaskService } from 'src/app/core/data/task.service';
 import { ProjectService } from 'src/app/core/data/project.service';
 import { InternService } from 'src/app/core/data/intern.service';
+import { AuthService } from 'src/app/core/data/auth.service';
+import { SubtaskService, SUBTASK_STATUSES, Subtask, SubtaskAggregate } from 'src/app/core/data/subtask.service';
+
+interface SubtaskForm {
+  titre: string;
+  description: string;
+  statut: string;
+}
 
 @Component({
   selector: 'app-taches',
@@ -15,6 +23,8 @@ export class TachesComponent implements OnInit {
   private taskService = inject(TaskService);
   private projectService = inject(ProjectService);
   private internService = inject(InternService);
+  private subtaskService = inject(SubtaskService);
+  private authService = inject(AuthService);
 
   taches = signal<any[]>([]);
   projets = signal<any[]>([]);
@@ -32,6 +42,20 @@ export class TachesComponent implements OnInit {
 
   form: any = { projet_id: '', executant_id: '', titre: '', description: '', priorite: 'MOYENNE', date_debut: '', date_fin: '' };
   editingId: string | null = null;
+
+  subtasks = signal<Subtask[]>([]);
+  subtaskAggregate = signal<SubtaskAggregate | null>(null);
+  subtasksLoading = signal(false);
+  subtaskError = signal('');
+  showSubtaskModal = signal(false);
+  editingSubtaskId: string | null = null;
+  subtaskForm: SubtaskForm = { titre: '', description: '', statut: 'TODO' };
+
+  readonly SUBTASK_STATUSES = SUBTASK_STATUSES;
+
+  get isEncadrant(): boolean {
+    return this.authService.currentUser()?.role === 'ENCADRANT';
+  }
 
   ngOnInit() { this.loadAll(); }
 
@@ -99,10 +123,124 @@ export class TachesComponent implements OnInit {
   openDetail(t: any) {
     this.selectedTask.set(t);
     this.showDetail.set(true);
+    this.loadSubtasks(t.id);
   }
 
   closeModal() { this.showModal.set(false); this.error.set(''); }
-  closeDetail() { this.showDetail.set(false); this.selectedTask.set(null); }
+  closeDetail() {
+    this.showDetail.set(false);
+    this.selectedTask.set(null);
+    this.subtasks.set([]);
+    this.subtaskAggregate.set(null);
+    this.subtaskError.set('');
+  }
+
+  loadSubtasks(taskId: string) {
+    this.subtasksLoading.set(true);
+    this.subtaskError.set('');
+    this.subtaskService.listByTask(taskId).subscribe({
+      next: (res) => {
+        this.subtasks.set(res.subtasks);
+        this.subtaskAggregate.set(res.aggregate);
+        this.subtasksLoading.set(false);
+      },
+      error: (err) => {
+        this.subtasksLoading.set(false);
+        this.subtaskError.set(err.error?.message || 'Chargement des sous-tâches impossible.');
+      }
+    });
+  }
+
+  openAddSubtask() {
+    this.editingSubtaskId = null;
+    this.subtaskForm = { titre: '', description: '', statut: 'TODO' };
+    this.subtaskError.set('');
+    this.showSubtaskModal.set(true);
+  }
+
+  openEditSubtask(s: Subtask) {
+    this.editingSubtaskId = s.id;
+    this.subtaskForm = {
+      titre: s.titre,
+      description: s.description || '',
+      statut: s.statut
+    };
+    this.subtaskError.set('');
+    this.showSubtaskModal.set(true);
+  }
+
+  closeSubtaskModal() {
+    this.showSubtaskModal.set(false);
+    this.subtaskError.set('');
+  }
+
+  saveSubtask() {
+    const task = this.selectedTask();
+    if (!task) return;
+    if (!this.subtaskForm.titre?.trim()) {
+      this.subtaskError.set('Le titre de la sous-tâche est requis.');
+      return;
+    }
+    this.subtasksLoading.set(true);
+    const payload = {
+      titre: this.subtaskForm.titre.trim(),
+      description: this.subtaskForm.description,
+      statut: this.subtaskForm.statut
+    };
+    const obs = this.editingSubtaskId
+      ? this.subtaskService.update(this.editingSubtaskId, payload)
+      : this.subtaskService.create(task.id, payload);
+    obs.subscribe({
+      next: () => {
+        this.subtasksLoading.set(false);
+        this.closeSubtaskModal();
+        this.loadSubtasks(task.id);
+      },
+      error: (err) => {
+        this.subtasksLoading.set(false);
+        this.subtaskError.set(err.error?.message || 'Enregistrement impossible.');
+      }
+    });
+  }
+
+  updateSubtaskStatus(id: string, statut: string) {
+    const task = this.selectedTask();
+    if (!task) return;
+    this.subtaskService.updateStatus(id, statut).subscribe({
+      next: () => this.loadSubtasks(task.id),
+      error: (err) => {
+        this.subtaskError.set(err.error?.message || 'Mise à jour du statut impossible.');
+      }
+    });
+  }
+
+  deleteSubtask(id: string) {
+    const task = this.selectedTask();
+    if (!task) return;
+    if (!confirm('Supprimer cette sous-tâche ?')) return;
+    this.subtaskService.remove(id).subscribe({
+      next: () => this.loadSubtasks(task.id),
+      error: (err) => {
+        this.subtaskError.set(err.error?.message || 'Suppression impossible.');
+      }
+    });
+  }
+
+  getSubtaskStatusBadge(s: string): string {
+    switch (s) {
+      case 'DONE': return 'badge bg-success';
+      case 'IN_PROGRESS': return 'badge bg-primary';
+      default: return 'badge bg-secondary';
+    }
+  }
+
+  getSubtaskStatusLabel(s: string): string {
+    switch (s) {
+      case 'DONE': return 'Terminée';
+      case 'IN_PROGRESS': return 'En cours';
+      default: return 'À faire';
+    }
+  }
 
   save() {
     if (!this.form.titre || !this.form.projet_id || !this.form.executant_id) {

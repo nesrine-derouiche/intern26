@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/certification_eligibility.dart';
 import '../../models/calendar_event.dart';
 import 'calendar_helpers.dart';
 
@@ -11,12 +12,16 @@ class WeekStrip extends StatelessWidget {
     required this.selected,
     required this.eventsByDay,
     required this.onSelect,
+    this.finalWeekEnd,
   });
 
   final DateTime startOfWeek;
   final DateTime selected;
   final Map<DateTime, List<CalendarEvent>> eventsByDay;
   final ValueChanged<DateTime> onSelect;
+
+  /// Inclusive end date of the internship final week (null = no highlight).
+  final DateTime? finalWeekEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +53,14 @@ class WeekStrip extends StatelessWidget {
                 ),
                 today,
               ),
+              isFinalWeek: isFinalWeekDay(
+                DateTime(
+                  startOfWeek.year,
+                  startOfWeek.month,
+                  startOfWeek.day + i,
+                ),
+                finalWeekEnd,
+              ),
               events:
                   eventsByDay[DateTime(
                     startOfWeek.year,
@@ -78,6 +91,7 @@ class _DayCell extends StatelessWidget {
     required this.date,
     required this.isSelected,
     required this.isToday,
+    required this.isFinalWeek,
     required this.events,
     required this.onTap,
   });
@@ -85,6 +99,7 @@ class _DayCell extends StatelessWidget {
   final DateTime date;
   final bool isSelected;
   final bool isToday;
+  final bool isFinalWeek;
   final List<CalendarEvent> events;
   final VoidCallback onTap;
 
@@ -100,7 +115,11 @@ class _DayCell extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
+          color: isSelected
+              ? AppColors.primary
+              : (isFinalWeek
+                    ? AppColors.danger.withValues(alpha: 0.10)
+                    : Colors.transparent),
           borderRadius: BorderRadius.circular(12),
           border: isToday && !isSelected
               ? Border.all(color: AppColors.primary, width: 1.5)

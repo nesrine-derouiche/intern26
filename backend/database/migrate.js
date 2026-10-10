@@ -502,6 +502,107 @@ const migrations = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_document_generated_template ON document_generated(template_id)`,
   `CREATE INDEX IF NOT EXISTS idx_document_generated_stage ON document_generated(stage_id)`,
+
+  // ── P2-TASK2 : Sous-tâches hiérarchiques ──────────────────────────────
+  // Les sous-tâches vivent dans leur propre table car leurs statuts
+  // métier exacts (TODO / IN_PROGRESS / DONE) sont incompatibles avec
+  // l'enum existant `statut_tache` (A_FAIRE / EN_COURS / TERMINEE /
+  // BLOQUEE) : aucune modification du schéma `tache` existant, aucun
+  // enregistrement existant n'est affecté. `tache_id` → CASCADE (la
+  // suppression de la tâche parente supprime ses sous-tâches).
+  // `updated_at` est piloté par la fonction partagée `trg_set_updated_at()`.
+  `CREATE TABLE IF NOT EXISTS subtask (
+     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     tache_id    UUID NOT NULL REFERENCES tache(id) ON DELETE CASCADE,
+     titre       VARCHAR(200) NOT NULL,
+     description TEXT,
+     statut      TEXT NOT NULL DEFAULT 'TODO'
+                 CHECK (statut IN ('TODO', 'IN_PROGRESS', 'DONE')),
+     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_subtask_tache ON subtask(tache_id)`,
+  `DROP TRIGGER IF EXISTS set_updated_at_subtask ON subtask`,
+  `CREATE TRIGGER set_updated_at_subtask BEFORE UPDATE ON subtask FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at()`,
+
+  // ── P2-TASK5 : Notes personnelles des stagiaires ─────────────────────
+  // Carnet privé de type brainstorming (ni journaux, ni rapports, ni
+  // documents de certification). `stagiaire_id` = propriétaire exclusif
+  // dérivé de la session (jamais d'un champ client) ; lecture/écriture
+  // réservées au STAGIAIRE propriétaire (vérifié en service).
+  // `client_key` + index unique partiel = idempotence de création lors
+  // des reprises réseau (même clé → la note existante est renvoyée).
+  // `pinned` permet l'épinglage (tri : épinglées d'abord, puis
+  // updated_at DESC). `updated_at` piloté par `trg_set_updated_at()`.
+  `CREATE TABLE IF NOT EXISTS note (
+     id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     stagiaire_id UUID NOT NULL REFERENCES stagiaire(id) ON DELETE CASCADE,
+     titre        VARCHAR(200) NOT NULL DEFAULT '',
+     contenu      TEXT NOT NULL DEFAULT '',
+     pinned       BOOLEAN NOT NULL DEFAULT false,
+     client_key   TEXT,
+     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS uniq_note_owner_client_key ON note(stagiaire_id, client_key) WHERE client_key IS NOT NULL`,
+  `CREATE INDEX IF NOT EXISTS idx_note_owner_updated ON note(stagiaire_id, updated_at DESC)`,
+  `DROP TRIGGER IF EXISTS set_updated_at_note ON note`,
+  `CREATE TRIGGER set_updated_at_note BEFORE UPDATE ON note FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at()`,
+
+  // ── P2-TASK6 : Certification de fin de stage ─────────────────────────
+  // Dossier de certification par stage (journal + rapport PDF) avec
+  // machine à états (NOT_SUBMITTED → SUBMITTED → REDO_REQUESTED /
+  // DENIED / VALIDATED → CERTIFICATE_GENERATED). Une seule certification
+  // par stage (UNIQUE stage_id). Les documents sont versionnés : chaque
+  // dépôt insère une nouvelle ligne (jamais d'écrasement) ; la version
+  // courante d'un type est la plus récente. Les décisions (transitions)
+  // sont historisées avec motif, document concerné et relecteur.
+  // `updated_at` piloté par `trg_set_updated_at()`.
+  `CREATE TABLE IF NOT EXISTS certification (
+     id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     stage_id       UUID NOT NULL UNIQUE REFERENCES stage(id) ON DELETE CASCADE,
+     stagiaire_id   UUID NOT NULL REFERENCES stagiaire(id) ON DELETE CASCADE,
+     statut         TEXT NOT NULL DEFAULT 'NOT_SUBMITTED'
+                    CHECK (statut IN ('NOT_SUBMITTED', 'SUBMITTED', 'REDO_REQUESTED', 'DENIED', 'VALIDATED', 'CERTIFICATE_GENERATED')),
+     reviewer_id    UUID REFERENCES utilisateur(id) ON DELETE SET NULL,
+     reason         TEXT,
+     document_concerne TEXT CHECK (document_concerne IS NULL OR document_concerne IN ('JOURNAL', 'RAPPORT')),
+     submitted_at   TIMESTAMPTZ,
+     decided_at     TIMESTAMPTZ,
+     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_certification_stage ON certification(stage_id)`,
+  `DROP TRIGGER IF EXISTS set_updated_at_certification ON certification`,
+  `CREATE TRIGGER set_updated_at_certification BEFORE UPDATE ON certification FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at()`,
+  `CREATE TABLE IF NOT EXISTS certification_document (
+     id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     certification_id UUID NOT NULL REFERENCES certification(id) ON DELETE CASCADE,
+     kind             TEXT NOT NULL CHECK (kind IN ('JOURNAL', 'RAPPORT')),
+     version          INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
+     nom              VARCHAR(255) NOT NULL,
+     chemin           VARCHAR(500) NOT NULL,
+     taille           INTEGER NOT NULL DEFAULT 0 CHECK (taille >= 0),
+     created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_certification_document_cert ON certification_document(certification_id, kind, version)`,
+  `CREATE TABLE IF NOT EXISTS certification_decision (
+     id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     certification_id UUID NOT NULL REFERENCES certification(id) ON DELETE CASCADE,
+     from_statut      TEXT NOT NULL,
+     to_statut        TEXT NOT NULL,
+     reviewer_id      UUID REFERENCES utilisateur(id) ON DELETE SET NULL,
+     reason           TEXT,
+     document_concerne TEXT CHECK (document_concerne IS NULL OR document_concerne IN ('JOURNAL', 'RAPPORT')),
+     created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_certification_decision_cert ON certification_decision(certification_id, created_at)`,
+
+  // ── P2-TASK8 : Attestation générée de certification ───────────────────
+  // Chemin du PDF d'attestation produit après validation (génération
+  // idempotente : un seul fichier par dossier). Ajout de colonne
+  // nullable : aucun enregistrement existant n'est affecté.
+  `ALTER TABLE certification ADD COLUMN IF NOT EXISTS attestation_chemin VARCHAR(500)`,
 ];
 
 async function migrate() {

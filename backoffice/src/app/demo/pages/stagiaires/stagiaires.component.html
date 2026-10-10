@@ -64,14 +64,14 @@
             <td style="min-width: 150px;">
               <div class="d-flex align-items-center">
                 <div class="progress flex-grow-1 me-2" style="height: 6px;">
-                    <div class="progress-bar bg-primary" [style.width]="getProgress(s) === null ? '0%' : getProgress(s) + '%'"></div>
+                  <div class="progress-bar bg-primary" [style.width]="getProgress(s) + '%'"></div>
                 </div>
-                  <small class="text-muted">{{ getProgressLabel(s) }}</small>
+                <small class="text-muted">{{ getProgress(s) }}%</small>
               </div>
             </td>
             <td class="text-center">
-              <button class="btn btn-sm btn-outline-primary me-1" type="button" aria-label="Modifier le stagiaire" title="Modifier" (click)="openEdit(s)"><i class="ti ti-pencil"></i></button>
-              <button class="btn btn-sm btn-outline-danger" type="button" aria-label="Supprimer le stagiaire" title="Supprimer" (click)="delete(s.id)"><i class="ti ti-trash"></i></button>
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="openEdit(s)"><i class="ti ti-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(s.id)"><i class="ti ti-trash"></i></button>
             </td>
           </tr>
           } @empty {

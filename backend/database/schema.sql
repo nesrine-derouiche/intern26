@@ -599,3 +599,114 @@ CREATE TABLE document_generated (
 
 CREATE INDEX idx_document_generated_template ON document_generated(template_id);
 CREATE INDEX idx_document_generated_stage ON document_generated(stage_id);
+
+-- =====================================================================
+-- Section 26 — P2-TASK2 : sous-tâches hiérarchiques
+-- =====================================================================
+-- Table dédiée (et non colonne sur `tache`) car les statuts métier
+-- exacts TODO / IN_PROGRESS / DONE sont incompatibles avec l'enum
+-- `statut_tache` existant : aucun enregistrement existant n'est affecté.
+-- `tache_id` → CASCADE : supprimer la tâche parente supprime ses
+-- sous-tâches. Un seul niveau de hiérarchie (pas de sous-sous-tâches).
+CREATE TABLE subtask (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tache_id    UUID NOT NULL REFERENCES tache(id) ON DELETE CASCADE,
+    titre       VARCHAR(200) NOT NULL,
+    description TEXT,
+    statut      TEXT NOT NULL DEFAULT 'TODO'
+                CHECK (statut IN ('TODO', 'IN_PROGRESS', 'DONE')),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_subtask_tache ON subtask(tache_id);
+
+CREATE TRIGGER set_updated_at_subtask
+    BEFORE UPDATE ON subtask
+    FOR EACH ROW
+    EXECUTE FUNCTION trg_set_updated_at();
+
+-- =====================================================================
+-- Section 27 — P2-TASK5 : notes personnelles des stagiaires
+-- =====================================================================
+-- Carnet privé (brainstorming) : ni journaux, ni rapports, ni documents
+-- de certification. Propriétaire = stagiaire dérivé de la session.
+-- `client_key` + index unique partiel : idempotence de création.
+CREATE TABLE note (
+    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    stagiaire_id UUID NOT NULL REFERENCES stagiaire(id) ON DELETE CASCADE,
+    titre        VARCHAR(200) NOT NULL DEFAULT '',
+    contenu      TEXT NOT NULL DEFAULT '',
+    pinned       BOOLEAN NOT NULL DEFAULT false,
+    client_key   TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX uniq_note_owner_client_key
+    ON note(stagiaire_id, client_key) WHERE client_key IS NOT NULL;
+CREATE INDEX idx_note_owner_updated ON note(stagiaire_id, updated_at DESC);
+
+CREATE TRIGGER set_updated_at_note
+    BEFORE UPDATE ON note
+    FOR EACH ROW
+    EXECUTE FUNCTION trg_set_updated_at();
+
+-- =====================================================================
+-- Section 28 — P2-TASK6 : certification de fin de stage
+-- =====================================================================
+-- Dossier par stage (UNIQUE stage_id) : journal + rapport PDF versionnés
+-- (jamais d'écrasement), machine à états, décisions historisées.
+CREATE TABLE certification (
+    id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    stage_id       UUID NOT NULL UNIQUE REFERENCES stage(id) ON DELETE CASCADE,
+    stagiaire_id   UUID NOT NULL REFERENCES stagiaire(id) ON DELETE CASCADE,
+    statut         TEXT NOT NULL DEFAULT 'NOT_SUBMITTED'
+                   CHECK (statut IN ('NOT_SUBMITTED', 'SUBMITTED', 'REDO_REQUESTED', 'DENIED', 'VALIDATED', 'CERTIFICATE_GENERATED')),
+    reviewer_id    UUID REFERENCES utilisateur(id) ON DELETE SET NULL,
+    reason         TEXT,
+    document_concerne TEXT CHECK (document_concerne IS NULL OR document_concerne IN ('JOURNAL', 'RAPPORT')),
+    submitted_at   TIMESTAMPTZ,
+    decided_at     TIMESTAMPTZ,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_certification_stage ON certification(stage_id);
+
+CREATE TRIGGER set_updated_at_certification
+    BEFORE UPDATE ON certification
+    FOR EACH ROW
+    EXECUTE FUNCTION trg_set_updated_at();
+
+CREATE TABLE certification_document (
+    id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    certification_id UUID NOT NULL REFERENCES certification(id) ON DELETE CASCADE,
+    kind             TEXT NOT NULL CHECK (kind IN ('JOURNAL', 'RAPPORT')),
+    version          INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
+    nom              VARCHAR(255) NOT NULL,
+    chemin           VARCHAR(500) NOT NULL,
+    taille           INTEGER NOT NULL DEFAULT 0 CHECK (taille >= 0),
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_certification_document_cert
+    ON certification_document(certification_id, kind, version);
+
+CREATE TABLE certification_decision (
+    id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    certification_id UUID NOT NULL REFERENCES certification(id) ON DELETE CASCADE,
+    from_statut      TEXT NOT NULL,
+    to_statut        TEXT NOT NULL,
+    reviewer_id      UUID REFERENCES utilisateur(id) ON DELETE SET NULL,
+    reason           TEXT,
+    document_concerne TEXT CHECK (document_concerne IS NULL OR document_concerne IN ('JOURNAL', 'RAPPORT')),
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_certification_decision_cert
+    ON certification_decision(certification_id, created_at);
+
+-- P2-TASK8 : chemin du PDF d'attestation généré après validation
+-- (génération idempotente, un seul fichier par dossier).
+ALTER TABLE certification ADD COLUMN attestation_chemin VARCHAR(500);

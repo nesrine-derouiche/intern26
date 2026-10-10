@@ -1,27 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/routing/route_paths.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/personal_tache.dart';
 import '../../models/tache.dart';
 import '../../providers/dashboard/dashboard_providers.dart';
 import '../../providers/personal_tache/personal_tache_providers.dart';
+import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/error_view.dart';
-import '../../widgets/dashboard/dashboard_skeletons.dart';
 import '../../widgets/dashboard/personal_tache_card.dart';
 import '../../widgets/dashboard/personal_tache_form.dart';
-import '../../widgets/dashboard/tache_card.dart';
 import '../../widgets/dashboard/tache_status_widgets.dart';
-
-final activeTaskFilterProvider =
-    NotifierProvider<ActiveTaskFilter, TacheStatut?>(ActiveTaskFilter.new);
-
-class ActiveTaskFilter extends Notifier<TacheStatut?> {
-  @override
-  TacheStatut? build() => null;
-
-  void select(TacheStatut? filter) => state = filter;
-}
+import '../../widgets/tasks/parent_task_card.dart';
 
 class MyTasksScreen extends ConsumerStatefulWidget {
   const MyTasksScreen({super.key});
@@ -31,374 +23,186 @@ class MyTasksScreen extends ConsumerStatefulWidget {
 }
 
 class _MyTasksScreenState extends ConsumerState<MyTasksScreen> {
+  TacheStatut? _activeFilter;
+
   @override
   Widget build(BuildContext context) {
-    final tachesAsync = ref.watch(myTachesProvider);
+    final tasksAsync = ref.watch(myTachesProvider);
     final sections = ref.watch(tachesSectionsProvider);
-    final activeFilter = ref.watch(activeTaskFilterProvider);
+    final personalAsync = ref.watch(personalTachesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
         title: const Text('Mes tâches'),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(myTachesProvider);
-          ref.invalidate(personalTachesProvider);
-        },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // ═══ SECTION 1: Tâches de l'encadrant ═══
-            SliverToBoxAdapter(
-              child: _SectionEncadrantHeader(
-                tachesAsync: tachesAsync,
-                sections: sections,
-                activeFilter: activeFilter,
-              ),
-            ),
-            ..._buildEncadrantSlivers(tachesAsync, sections, activeFilter),
-
-            // ═══ SECTION 2: Mon tableau personnel ═══
-            const SliverToBoxAdapter(child: _SectionPersonalHeader()),
-            const SliverToBoxAdapter(child: _PersonalBoard()),
-            SliverPadding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewPadding.bottom + 80,
-              ),
-            ),
-          ],
+      body: tasksAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => ErrorView(
+          message: error.toString(),
+          onRetry: () => ref.refresh(myTachesProvider.future),
         ),
-      ),
-    );
-  }
+        data: (_) {
+          final visibleSections = _activeFilter == null
+              ? sections
+              : sections
+                  .where((section) => section.status == _activeFilter)
+                  .toList();
+          final total = sections.fold<int>(
+            0,
+            (sum, section) => sum + section.items.length,
+          );
 
-  List<Widget> _buildEncadrantSlivers(
-    AsyncValue<List<Tache>> tachesAsync,
-    List<TacheSection> sections,
-    TacheStatut? activeFilter,
-  ) {
-    if (tachesAsync.isLoading && !tachesAsync.hasValue) {
-      return [
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (_, index) => const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: TacheCardSkeleton(),
-              ),
-              childCount: 3,
-            ),
-          ),
-        ),
-      ];
-    }
-
-    if (tachesAsync.hasError && !tachesAsync.hasValue) {
-      return [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: ErrorView(
-            message: tachesAsync.error.toString(),
-            onRetry: () => ref.refresh(myTachesProvider.future),
-          ),
-        ),
-      ];
-    }
-
-    final total = sections.fold<int>(0, (sum, s) => sum + s.items.length);
-    if (total == 0) {
-      return const [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'Aucune tâche assignée par votre encadrant.',
-              style: TextStyle(color: AppColors.textTertiary, fontSize: 13),
-            ),
-          ),
-        ),
-      ];
-    }
-
-    final visibleSections = activeFilter != null
-        ? sections.where((s) => s.status == activeFilter).toList()
-        : sections;
-
-    return [
-      SliverToBoxAdapter(
-        child: _FilterChips(
-          sections: sections,
-          activeFilter: activeFilter,
-          onFilterChanged: (f) => ref.read(activeTaskFilterProvider.notifier).select(f),
-        ),
-      ),
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final section = visibleSections[index];
-              if (section.items.isEmpty) return const SizedBox.shrink();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionSubHeader(section: section),
-                  const SizedBox(height: 8),
-                  for (final tache in section.items)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: TacheCard(tache: tache),
+          return CustomScrollView(
+            slivers: [
+              if (total > 0)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: _FilterChips(
+                      sections: sections,
+                      total: total,
+                      activeFilter: _activeFilter,
+                      onFilterChanged: (filter) {
+                        setState(() => _activeFilter = filter);
+                      },
                     ),
-                ],
-              );
-            },
-            childCount: visibleSections.length,
-          ),
-        ),
-      ),
-    ];
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Section 1 Header — Tâches de mon encadrant
-// ═══════════════════════════════════════════════════════════════
-class _SectionEncadrantHeader extends StatelessWidget {
-  const _SectionEncadrantHeader({
-    required this.tachesAsync,
-    required this.sections,
-    required this.activeFilter,
-  });
-
-  final AsyncValue<List<Tache>> tachesAsync;
-  final List<TacheSection> sections;
-  final TacheStatut? activeFilter;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = sections.fold<int>(0, (sum, s) => sum + s.items.length);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.primaryTint.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.school_outlined, size: 18, color: AppColors.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Tâches de mon encadrant',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '$total tâche${total > 1 ? 's' : ''} assignée${total > 1 ? 's' : ''}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
+              if (total == 0)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: EmptyState(
+                      icon: Icons.checklist_outlined,
+                      title: 'Aucune tâche assignée par votre encadrant.',
+                      message:
+                          'Les tâches que votre encadrant vous confie apparaîtront ici.',
+                    ),
+                  ),
+                )
+              else
+                for (final section in visibleSections)
+                  if (section.items.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: _SectionHeader(
+                          status: section.status,
+                          count: section.items.length,
+                        ),
+                      ),
+                    ),
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final task = section.items[index];
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                            child: ParentTaskCard(
+                              task: task,
+                              onTap: () => context.push(
+                                RoutePaths.taskDetails
+                                    .replaceFirst(':id', task.id),
+                                extra: task,
+                              ),
+                            ),
+                          );
+                        },
+                        childCount: section.items.length,
+                      ),
+                    ),
+                  ],
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Tâches personnelles',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Ajouter une tâche personnelle',
+                        icon: const Icon(Icons.add_circle_outline),
+                        onPressed: () => _openPersonalForm(context, null),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          const Icon(Icons.lock_outline, size: 16, color: AppColors.textTertiary),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Section 2 Header — Mon tableau personnel
-// ═══════════════════════════════════════════════════════════════
-class _SectionPersonalHeader extends StatelessWidget {
-  const _SectionPersonalHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.violet.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.violet.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.dashboard_outlined, size: 18, color: AppColors.violet),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Mon tableau',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Organise ton travail personnel',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Trello Board — 3 columns with Drag & Drop
-// ═══════════════════════════════════════════════════════════════
-class _PersonalBoard extends ConsumerWidget {
-  const _PersonalBoard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final personalAsync = ref.watch(personalTachesProvider);
-
-    return personalAsync.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: ErrorView(
-          message: e.toString(),
-          onRetry: () => ref.refresh(personalTachesProvider.future),
-        ),
-      ),
-      data: (tasks) {
-        final af = tasks.where((t) => t.isAFaire).toList()
-          ..sort((a, b) => a.position.compareTo(b.position));
-        final ec = tasks.where((t) => t.isEnCours).toList()
-          ..sort((a, b) => a.position.compareTo(b.position));
-        final done = tasks.where((t) => t.isTerminee).toList()
-          ..sort((a, b) => a.position.compareTo(b.position));
-
-        final screen = MediaQuery.of(context);
-        final boardHeight = (screen.size.height * 0.42).clamp(340.0, 480.0);
-        final columnWidth = ((screen.size.width - 44) * 0.85).clamp(220.0, 380.0);
-
-        return SizedBox(
-          height: boardHeight,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _TrelloColumn(
-                columnWidth: columnWidth,
-                title: 'À faire',
-                icon: Icons.pending_outlined,
-                color: AppColors.warning,
-                tasks: af,
-                emptyMessage: 'Aucune tâche ici',
-                onAdd: () => _showAddForm(context),
-                onTaskTap: (t) => _showEditForm(context, t),
-                onAccept: (task, newPos) => _moveTask(ref, task, 'A_FAIRE', newPos),
-                onReorder: (task, newPos) => _moveTask(ref, task, 'A_FAIRE', newPos),
               ),
-              const SizedBox(width: 12),
-              _TrelloColumn(
-                columnWidth: columnWidth,
-                title: 'En cours',
-                icon: Icons.play_circle_outline,
-                color: AppColors.info,
-                tasks: ec,
-                emptyMessage: 'Aucune tâche ici',
-                onAdd: () => _showAddForm(context),
-                onTaskTap: (t) => _showEditForm(context, t),
-                onAccept: (task, newPos) => _moveTask(ref, task, 'EN_COURS', newPos),
-                onReorder: (task, newPos) => _moveTask(ref, task, 'EN_COURS', newPos),
-              ),
-              const SizedBox(width: 12),
-              _TrelloColumn(
-                columnWidth: columnWidth,
-                title: 'Terminée',
-                icon: Icons.check_circle_outline,
-                color: AppColors.success,
-                tasks: done,
-                emptyMessage: 'Aucune tâche ici',
-                onAdd: () => _showAddForm(context),
-                onTaskTap: (t) => _showEditForm(context, t),
-                onAccept: (task, newPos) => _moveTask(ref, task, 'TERMINEE', newPos),
-                onReorder: (task, newPos) => _moveTask(ref, task, 'TERMINEE', newPos),
+              SliverToBoxAdapter(
+                child: personalAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                  error: (error, _) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Tâches personnelles indisponibles.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ),
+                  data: (tasks) {
+                    if (tasks.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        child: Text(
+                          'Créez vos propres tâches pour organiser votre stage.',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      );
+                    }
+                    return ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
+                      itemCount: tasks.length,
+                      onReorder: (oldIndex, newIndex) {
+                        if (newIndex > oldIndex) newIndex--;
+                        if (oldIndex == newIndex) return;
+                        final task = tasks[oldIndex];
+                        ref.read(personalTachesProvider.notifier).moveTask(
+                              task.id,
+                              statut: task.statut,
+                              position: newIndex,
+                            );
+                      },
+                      itemBuilder: (context, index) {
+                        final task = tasks[index];
+                        return Padding(
+                          key: ValueKey(task.id),
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: PersonalTacheCard(
+                            tache: task,
+                            onLongPress: () =>
+                                _showPersonalActions(context, task),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _moveTask(WidgetRef ref, PersonalTache task, String statut, int position) async {
-    try {
-      await ref.read(personalTachesProvider.notifier).moveTask(
-        task.id,
-        statut: statut,
-        position: position,
-      );
-    } catch (e) {
-      if (ref.context.mounted) {
-        ScaffoldMessenger.of(ref.context).showSnackBar(
-          SnackBar(content: Text('Erreur de déplacement : $e')),
-        );
-      }
-    }
-  }
-
-  void _showAddForm(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          );
+        },
       ),
-      builder: (_) => const PersonalTacheFormSheet(),
     );
   }
 
-  void _showEditForm(BuildContext context, PersonalTache task) {
-    showModalBottomSheet(
+  Future<void> _openPersonalForm(BuildContext context, PersonalTache? task) async {
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -407,173 +211,8 @@ class _PersonalBoard extends ConsumerWidget {
       builder: (_) => PersonalTacheFormSheet(existing: task),
     );
   }
-}
 
-// ═══════════════════════════════════════════════════════════════
-// Trello Column Widget
-// ═══════════════════════════════════════════════════════════════
-class _TrelloColumn extends StatelessWidget {
-  const _TrelloColumn({
-    required this.title,
-    required this.icon,
-    required this.color,
-    required this.tasks,
-    required this.emptyMessage,
-    required this.columnWidth,
-    this.onAdd,
-    this.onTaskTap,
-    required this.onAccept,
-    required this.onReorder,
-  });
-
-  final String title;
-  final IconData icon;
-  final Color color;
-  final List<PersonalTache> tasks;
-  final String emptyMessage;
-  final double columnWidth;
-  final VoidCallback? onAdd;
-  final ValueChanged<PersonalTache>? onTaskTap;
-  final void Function(PersonalTache task, int position) onAccept;
-  final void Function(PersonalTache task, int position) onReorder;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: columnWidth,
-      child: DragTarget<PersonalTache>(
-        onWillAcceptWithDetails: (details) {
-          final dragged = details.data;
-          final isSameColumn = tasks.any((t) => t.id == dragged.id);
-          return !isSameColumn;
-        },
-        onAcceptWithDetails: (details) {
-          onAccept(details.data, tasks.length);
-        },
-        builder: (context, candidateData, rejectedData) {
-          final isHovering = candidateData.isNotEmpty;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isHovering
-                  ? color.withValues(alpha: 0.06)
-                  : AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isHovering ? color.withValues(alpha: 0.4) : AppColors.border,
-                width: isHovering ? 2 : 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Column header
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
-                  child: Row(
-                    children: [
-                      Icon(icon, size: 16, color: color),
-                      const SizedBox(width: 6),
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          color: color,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${tasks.length}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: color,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, indent: 14, endIndent: 14),
-                // Task list
-                Expanded(
-                  child: tasks.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(icon, size: 28, color: AppColors.textTertiary.withValues(alpha: 0.4)),
-                                const SizedBox(height: 8),
-                                Text(
-                                  emptyMessage,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textTertiary,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : ReorderableListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          itemCount: tasks.length,
-                          onReorder: (oldIndex, newIndex) {
-                            if (newIndex > oldIndex) newIndex--;
-                            if (oldIndex == newIndex) return;
-                            onReorder(tasks[oldIndex], newIndex);
-                          },
-                          itemBuilder: (context, index) {
-                            final task = tasks[index];
-                            return Padding(
-                              key: ValueKey(task.id),
-                              padding: const EdgeInsets.only(bottom: 6),
-                              child: PersonalTacheCard(
-                                tache: task,
-                                onTap: () => onTaskTap?.call(task),
-                                onLongPress: () => _showTaskActions(context, task),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-                // Add button
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: onAdd,
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Ajouter'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: color,
-                        side: BorderSide(color: color.withValues(alpha: 0.3)),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showTaskActions(BuildContext context, PersonalTache task) {
+  void _showPersonalActions(BuildContext context, PersonalTache task) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -598,7 +237,8 @@ class _TrelloColumn extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   task.titre,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 15),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -609,19 +249,14 @@ class _TrelloColumn extends StatelessWidget {
                 title: const Text('Modifier'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    builder: (_) => PersonalTacheFormSheet(existing: task),
-                  );
+                  _openPersonalForm(context, task);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppColors.danger),
-                title: const Text('Supprimer', style: TextStyle(color: AppColors.danger)),
+                leading:
+                    const Icon(Icons.delete_outline, color: AppColors.danger),
+                title: const Text('Supprimer',
+                    style: TextStyle(color: AppColors.danger)),
                 onTap: () async {
                   Navigator.pop(ctx);
                   final confirmed = await showDialog<bool>(
@@ -630,17 +265,23 @@ class _TrelloColumn extends StatelessWidget {
                       title: const Text('Supprimer la tâche'),
                       content: Text('Supprimer « ${task.titre} » ?'),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Annuler')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(d, false),
+                          child: const Text('Annuler'),
+                        ),
                         TextButton(
                           onPressed: () => Navigator.pop(d, true),
-                          child: const Text('Supprimer', style: TextStyle(color: AppColors.danger)),
+                          child: const Text('Supprimer',
+                              style: TextStyle(color: AppColors.danger)),
                         ),
                       ],
                     ),
                   );
                   if (confirmed == true && context.mounted) {
                     final container = ProviderScope.containerOf(context);
-                    container.read(personalTachesProvider.notifier).delete(task.id);
+                    container
+                        .read(personalTachesProvider.notifier)
+                        .delete(task.id);
                   }
                 },
               ),
@@ -652,31 +293,28 @@ class _TrelloColumn extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Filter Chips for encadrant tasks
-// ═══════════════════════════════════════════════════════════════
 class _FilterChips extends StatelessWidget {
   const _FilterChips({
     required this.sections,
+    required this.total,
     required this.activeFilter,
     required this.onFilterChanged,
   });
 
   final List<TacheSection> sections;
+  final int total;
   final TacheStatut? activeFilter;
   final ValueChanged<TacheStatut?> onFilterChanged;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
         children: [
           _FilterChipItem(
             label: 'Toutes',
-            count: sections.fold<int>(0, (sum, s) => sum + s.items.length),
+            count: total,
             color: AppColors.primary,
             isSelected: activeFilter == null,
             onTap: () => onFilterChanged(null),
@@ -718,34 +356,38 @@ class _FilterChipItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.15) : color.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected
+              ? color.withValues(alpha: 0.16)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: isSelected ? color : color.withValues(alpha: 0.15),
-            width: isSelected ? 1.5 : 1,
+            color: isSelected ? color : AppColors.border,
+            width: 1,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$count',
-              style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(width: 4),
-            Text(
               label,
-              style: theme.textTheme.labelMedium?.copyWith(
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
                 color: isSelected ? color : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                fontSize: 12,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? color : AppColors.textTertiary,
               ),
             ),
           ],
@@ -755,51 +397,41 @@ class _FilterChipItem extends StatelessWidget {
   }
 }
 
-class _SectionSubHeader extends StatelessWidget {
-  const _SectionSubHeader({required this.section});
-  final TacheSection section;
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.status, required this.count});
+
+  final TacheStatut status;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
-    final status = section.status;
-    final color = TacheStatutBadge.color(status.value);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-      child: Row(
-        children: [
-          Icon(
-            switch (status) {
-              TacheStatut.aFaire => Icons.pending_outlined,
-              TacheStatut.enCours => Icons.play_circle_outline,
-              TacheStatut.terminee => Icons.check_circle_outline,
-              TacheStatut.bloquee => Icons.block_outlined,
-            },
-            size: 14,
-            color: color,
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: TacheStatutBadge.color(status.value),
+            shape: BoxShape.circle,
           ),
-          const SizedBox(width: 6),
-          Text(
-            status.label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${section.items.length}',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          status.label,
+          style: Theme.of(context)
+              .textTheme
+              .titleSmall
+              ?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$count',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppColors.textSecondary),
+        ),
+      ],
     );
   }
 }

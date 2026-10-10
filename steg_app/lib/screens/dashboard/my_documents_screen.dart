@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,10 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/file_utils.dart';
+import '../../models/certification.dart';
 import '../../models/document_item.dart';
 import '../../models/internship.dart';
 import '../../models/user.dart';
 import '../../providers/auth/auth_provider.dart';
+import '../../providers/certification/certification_provider.dart';
 import '../../providers/dashboard/dashboard_providers.dart';
 import '../../widgets/common/app_card.dart';
 import '../../widgets/common/app_section_header.dart';
@@ -110,6 +114,10 @@ class _MyDocumentsScreenState extends ConsumerState<MyDocumentsScreen> {
     final stats = ref.watch(dashboardStatsProvider).value;
     final internship = stats?.internship;
     final internshipId = internship?.id;
+    final certificationAsync = internshipId == null
+        ? const AsyncValue<CertificationState?>.data(null)
+        : ref.watch(certificationProvider(internshipId));
+    final certification = certificationAsync.value;
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(myDocumentsProvider.future),
@@ -152,6 +160,24 @@ class _MyDocumentsScreenState extends ConsumerState<MyDocumentsScreen> {
                   ),
                 ),
               const SizedBox(height: 24),
+              if (certification?.hasAttestation ?? false) ...[
+                const _SectionHeader(
+                  icon: Icons.verified_outlined,
+                  title: 'Attestation certifiée',
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _CertifiedAttestationCard(
+                    fileName: certification?.attestationNom ??
+                        'attestation_certification.pdf',
+                    onPreview: () => _openCertifiedAttestation(context, internship),
+                    onDownload: () =>
+                        _downloadCertifiedAttestation(context, internship),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
             ],
             const _SectionHeader(
               icon: Icons.upload_file_outlined,
@@ -345,6 +371,60 @@ class _MyDocumentsScreenState extends ConsumerState<MyDocumentsScreen> {
     }
   }
 
+  Future<Uint8List> _fetchCertifiedAttestation(Internship internship) {
+    return ref
+        .read(certificationServiceProvider)
+        .downloadAttestation(stageId: internship.id);
+  }
+
+  Future<void> _openCertifiedAttestation(
+    BuildContext context,
+    Internship internship,
+  ) async {
+    setState(() => _busy = true);
+    try {
+      final bytes = await _fetchCertifiedAttestation(internship);
+      if (!context.mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PdfPreviewScreen(
+            title: 'Attestation certifiée',
+            bytes: bytes,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (context.mounted) {
+        _showSnack(context, 'Attestation indisponible : $error');
+      }
+    } finally {
+      if (context.mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _downloadCertifiedAttestation(
+    BuildContext context,
+    Internship internship,
+  ) async {
+    setState(() => _busy = true);
+    try {
+      final bytes = await _fetchCertifiedAttestation(internship);
+      final name = ref
+              .read(certificationProvider(internship.id))
+              .value
+              ?.attestationNom ??
+          'attestation_certification.pdf';
+      if (!context.mounted) return;
+      await openWithSystemViewer(bytes, name);
+    } catch (error) {
+      if (context.mounted) {
+        _showSnack(context, 'Téléchargement échoué : $error');
+      }
+    } finally {
+      if (context.mounted) setState(() => _busy = false);
+    }
+  }
+
   List<DocumentItem> _generatedDocuments(WidgetRef ref, Internship internship) {
     return ref.read(documentServiceProvider).generatedDocumentsForStage(
           stageId: internship.id,
@@ -423,6 +503,74 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSectionHeader(icon: icon, title: title);
+  }
+}
+
+class _CertifiedAttestationCard extends StatelessWidget {
+  const _CertifiedAttestationCard({
+    required this.fileName,
+    required this.onPreview,
+    required this.onDownload,
+  });
+
+  final String fileName;
+  final VoidCallback onPreview;
+  final VoidCallback onDownload;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              gradient: AppColors.brandGradient,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.workspace_premium_outlined,
+              size: 22,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Attestation de stage certifiée',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Validée par votre encadrant',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Aperçu',
+            onPressed: onPreview,
+            icon: const Icon(Icons.visibility_outlined),
+          ),
+          IconButton(
+            tooltip: 'Télécharger',
+            onPressed: onDownload,
+            icon: const Icon(Icons.download_outlined),
+          ),
+        ],
+      ),
+    );
   }
 }
 

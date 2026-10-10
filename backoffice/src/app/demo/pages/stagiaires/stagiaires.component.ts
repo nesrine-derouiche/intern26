@@ -77,19 +77,8 @@ export class StagiairesComponent implements OnInit {
     this.internService.delete(id).subscribe({ next: () => this.load() });
   }
 
-  getProgress(s: any): number | null {
-    const total = Number(s?.nb_taches);
-    const completed = Number(s?.nb_taches_terminees);
-
-    if (!Number.isFinite(total) || total < 0) return null;
-    if (total === 0) return 0;
-    if (!Number.isFinite(completed) || completed < 0) return null;
-
-    return Math.min(100, Math.max(0, Math.round((completed / total) * 100)));
+  getProgress(s: any): number {
+    if (!s.nb_taches || s.nb_taches === 0) return 0;
+    return Math.round((s.nb_taches_terminees / s.nb_taches) * 100);
   }
-
-    getProgressLabel(s: any): string {
-      const progress = this.getProgress(s);
-      return progress === null ? '—' : `${progress}%`;
-    }
 }

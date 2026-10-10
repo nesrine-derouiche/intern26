@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { AuthService } from 'src/app/core/data/auth.service';
 import { TachesComponent } from './taches.component';
 
 describe('TachesComponent', () => {
@@ -144,6 +145,10 @@ describe('TachesComponent', () => {
     expect(component.showDetail()).toBeTruthy();
     expect(component.selectedTask()).toEqual(task);
 
+    const req = httpMock.expectOne('http://localhost:3000/api/taches/1/subtasks');
+    expect(req.request.method).toBe('GET');
+    req.flush({ subtasks: [], aggregate: { total: 0, progress: null, empty: true } });
+
     component.closeDetail();
     expect(component.showDetail()).toBeFalsy();
     expect(component.selectedTask()).toBeNull();
@@ -239,5 +244,136 @@ describe('TachesComponent', () => {
     expect(timeline[0].label).toBe('Tâche créée');
     expect(timeline[1].label).toBe('Date de début');
     expect(timeline[2].label).toBe('Échéance');
+  });
+
+  it('should load subtasks with aggregate when opening detail', () => {
+    component.openDetail({ id: '1', titre: 'T' });
+
+    const req = httpMock.expectOne('http://localhost:3000/api/taches/1/subtasks');
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      subtasks: [{ id: 's1', tache_id: '1', titre: 'S1', statut: 'TODO' }],
+      aggregate: { total: 1, todo: 1, in_progress: 0, done: 0, progress: 0, empty: false }
+    });
+
+    expect(component.subtasks().length).toBe(1);
+    expect(component.subtaskAggregate()?.progress).toBe(0);
+    expect(component.subtasksLoading()).toBe(false);
+  });
+
+  it('should surface subtask loading errors', () => {
+    component.openDetail({ id: '1', titre: 'T' });
+
+    const req = httpMock.expectOne('http://localhost:3000/api/taches/1/subtasks');
+    req.flush({ success: false, message: 'Erreur.' }, { status: 500, statusText: 'Server Error' });
+
+    expect(component.subtasksLoading()).toBe(false);
+    expect(component.subtaskError()).toBe('Erreur.');
+  });
+
+  it('should open add subtask modal with defaults', () => {
+    component.openAddSubtask();
+    expect(component.showSubtaskModal()).toBeTruthy();
+    expect(component.editingSubtaskId).toBeNull();
+    expect(component.subtaskForm.statut).toBe('TODO');
+  });
+
+  it('should open edit subtask modal with data', () => {
+    component.openEditSubtask({ id: 's1', tache_id: '1', titre: 'S1', description: 'D', statut: 'DONE' });
+    expect(component.showSubtaskModal()).toBeTruthy();
+    expect(component.editingSubtaskId).toBe('s1');
+    expect(component.subtaskForm.titre).toBe('S1');
+    expect(component.subtaskForm.statut).toBe('DONE');
+  });
+
+  it('should reject empty subtask titre without calling the API', () => {
+    component.selectedTask.set({ id: '1' });
+    component.subtaskForm = { titre: '   ', description: '', statut: 'TODO' };
+    component.saveSubtask();
+    expect(component.subtaskError()).toContain('titre');
+    httpMock.expectNone('http://localhost:3000/api/taches/1/subtasks');
+  });
+
+  it('should create a subtask via POST then reload the list', () => {
+    component.selectedTask.set({ id: '1' });
+    component.subtaskForm = { titre: 'Nouvelle', description: '', statut: 'TODO' };
+    component.saveSubtask();
+
+    const post = httpMock.expectOne('http://localhost:3000/api/taches/1/subtasks');
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body.titre).toBe('Nouvelle');
+    post.flush({ message: 'Sous-tâche créée.', subtask: { id: 's9' } });
+
+    const reload = httpMock.expectOne('http://localhost:3000/api/taches/1/subtasks');
+    expect(reload.request.method).toBe('GET');
+    reload.flush({ subtasks: [], aggregate: { total: 0, progress: null, empty: true } });
+    expect(component.showSubtaskModal()).toBe(false);
+  });
+
+  it('should update a subtask via PUT then reload the list', () => {
+    component.selectedTask.set({ id: '1' });
+    component.editingSubtaskId = 's1';
+    component.subtaskForm = { titre: 'Renommée', description: '', statut: 'IN_PROGRESS' };
+    component.saveSubtask();
+
+    const put = httpMock.expectOne('http://localhost:3000/api/subtasks/s1');
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body.titre).toBe('Renommée');
+    put.flush({ message: 'OK', subtask: { id: 's1' } });
+
+    const reload = httpMock.expectOne('http://localhost:3000/api/taches/1/subtasks');
+    reload.flush({ subtasks: [], aggregate: { total: 0, progress: null, empty: true } });
+  });
+
+  it('should update a subtask status via PATCH then reload the list', () => {
+    component.selectedTask.set({ id: '1' });
+    component.updateSubtaskStatus('s1', 'DONE');
+
+    const patch = httpMock.expectOne('http://localhost:3000/api/subtasks/s1/status');
+    expect(patch.request.method).toBe('PATCH');
+    expect(patch.request.body.statut).toBe('DONE');
+    patch.flush({ message: 'OK', subtask: { id: 's1', statut: 'DONE' } });
+
+    const reload = httpMock.expectOne('http://localhost:3000/api/taches/1/subtasks');
+    reload.flush({ subtasks: [], aggregate: { total: 0, progress: null, empty: true } });
+  });
+
+  it('should delete a subtask after confirmation then reload the list', () => {
+    const globalScope = globalThis as unknown as {
+      confirm?: (message?: string) => boolean;
+    };
+    const originalConfirm = globalScope.confirm;
+    globalScope.confirm = () => true;
+    component.selectedTask.set({ id: '1' });
+    component.deleteSubtask('s1');
+
+    const del = httpMock.expectOne('http://localhost:3000/api/subtasks/s1');
+    expect(del.request.method).toBe('DELETE');
+    del.flush({ message: 'Sous-tâche supprimée.' });
+
+    const reload = httpMock.expectOne('http://localhost:3000/api/taches/1/subtasks');
+    reload.flush({ subtasks: [], aggregate: { total: 0, progress: null, empty: true } });
+    globalScope.confirm = originalConfirm;
+  });
+
+  it('should restrict management to the ENCADRANT role', () => {
+    const authService = TestBed.inject(AuthService);
+    authService.saveUser({ id: 'e1', role: 'ENCADRANT', nom: 'Ben', prenom: 'Ali', email: 'e@steg.tn' });
+    expect(component.isEncadrant).toBe(true);
+
+    authService.saveUser({ id: 'a1', role: 'ADMIN', nom: 'A', prenom: 'B', email: 'a@steg.tn' });
+    expect(component.isEncadrant).toBe(false);
+
+    authService.saveUser({ id: 'r1', role: 'RH', nom: 'R', prenom: 'H', email: 'r@steg.tn' });
+    expect(component.isEncadrant).toBe(false);
+  });
+
+  it('should return correct subtask status badges and labels', () => {
+    expect(component.getSubtaskStatusBadge('DONE')).toContain('success');
+    expect(component.getSubtaskStatusBadge('IN_PROGRESS')).toContain('primary');
+    expect(component.getSubtaskStatusBadge('TODO')).toContain('secondary');
+    expect(component.getSubtaskStatusLabel('DONE')).toBe('Terminée');
+    expect(component.getSubtaskStatusLabel('IN_PROGRESS')).toBe('En cours');
+    expect(component.getSubtaskStatusLabel('TODO')).toBe('À faire');
   });
 });

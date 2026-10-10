@@ -261,13 +261,12 @@ void main() {
       expect(find.text('Brouillons'), findsOneWidget);
     });
 
-    testWidgets('shows evaluation section with grade', (tester) async {
+    testWidgets('does not show evaluation section on home', (tester) async {
       final repo = FakeStagiaireOverviewRepository(overview: buildFullOverview());
       await tester.pumpWidget(buildTestApp(overviewRepo: repo));
       await tester.pumpAndSettle();
 
-      expect(find.text('Évaluation'), findsOneWidget);
-      expect(find.text('16.4'), findsOneWidget);
+      expect(find.text('Évaluation'), findsNothing);
     });
 
     testWidgets('hides optional sections when absent', (tester) async {

@@ -388,3 +388,35 @@
     box-shadow: 0 4px 12px rgba(91,92,235,0.15);
   }
 }
+
+.subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.subtask-status-select {
+  width: auto;
+  min-width: 150px;
+}
+
+@media (max-width: 576px) {
+  .subtask-item {
+    flex-wrap: wrap;
+  }
+
+  .subtask-status-select {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+}

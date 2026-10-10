@@ -99,6 +99,12 @@ export const NavigationItems: NavigationItem[] = [
         title: 'Templates',
         type: 'item', classes: 'nav-item', url: '/templates', icon: 'ti ti-template', breadcrumbs: false,
         roles: ['ADMIN', 'RH']
+      },
+      {
+        id: 'certifications',
+        title: 'Certifications',
+        type: 'item', classes: 'nav-item', url: '/certifications', icon: 'ti ti-award', breadcrumbs: false,
+        roles: ['ADMIN', 'RH', 'ENCADRANT']
       }
     ]
   }

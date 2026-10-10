@@ -308,11 +308,8 @@ export class DefaultComponent implements OnInit {
 
   getProgress(): number {
     const s = this.stats();
-    const total = Number(s?.tachesTotal);
-    const completed = Number(s?.tachesTerminees);
-    if (!Number.isFinite(total) || total <= 0) return 0;
-    if (!Number.isFinite(completed) || completed < 0) return 0;
-    return Math.min(100, Math.max(0, Math.round((completed / total) * 100)));
+    if (!s || !s.tachesTotal || s.tachesTotal === 0) return 0;
+    return Math.round((s.tachesTerminees / s.tachesTotal) * 100);
   }
 
   getRoleLabel(): string {

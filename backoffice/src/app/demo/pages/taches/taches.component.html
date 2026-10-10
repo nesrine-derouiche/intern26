@@ -14,7 +14,7 @@
           <i class="ti ti-layout-columns"></i>
         </button>
       </div>
-      <button class="btn btn-primary-custom" (click)="openAdd()">
+      <button class="btn btn-primary-custom" (click)="openAdd()" [disabled]="!isEncadrant" title="Réservé aux encadrants">
         <i class="ti ti-plus me-1"></i> Nouvelle tâche
       </button>
     </div>
@@ -158,8 +158,10 @@
             </td>
             <td class="text-center" (click)="$event.stopPropagation()">
               <div class="d-flex gap-1 justify-content-center">
+                @if (isEncadrant) {
                 <button class="btn btn-sm btn-outline-primary" (click)="openEdit(t)"><i class="ti ti-pencil"></i></button>
                 <button class="btn btn-sm btn-outline-danger" (click)="delete(t.id)"><i class="ti ti-trash"></i></button>
+                }
               </div>
             </td>
           </tr>
@@ -318,6 +320,68 @@
     </div>
 
     <div class="detail-section">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Sous-tâches
+          @let agg = subtaskAggregate();
+          @if (agg) {
+          <span class="badge bg-secondary ms-2">{{ agg.total }}</span>
+          }
+        </h6>
+        @if (isEncadrant) {
+        <button class="btn btn-sm btn-outline-primary" (click)="openAddSubtask()">
+          <i class="ti ti-plus me-1"></i> Ajouter
+        </button>
+        }
+      </div>
+
+      @if (agg && !agg.empty) {
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="progress-track flex-grow-1">
+          <div class="progress-fill" [style.width.%]="agg.progress" [style.background]="getProgressColor({statut:'EN_COURS',progress:agg.progress})"></div>
+        </div>
+        <span class="small fw-bold">{{ agg.progress }}%</span>
+        <small class="text-muted">{{ agg.done }}/{{ agg.total }} terminée(s)</small>
+      </div>
+      }
+
+      @if (subtasksLoading() && subtasks().length === 0) {
+      <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+      } @else if (subtaskError()) {
+      <div class="alert alert-danger py-2">{{ subtaskError() }}</div>
+      } @else if (subtasks().length === 0) {
+      <div class="empty-state py-3">
+        <div class="empty-icon"><i class="ti ti-list-check"></i></div>
+        <h6>Aucune sous-tâche</h6>
+        <p class="small">Découpez cette tâche pour suivre sa progression.</p>
+      </div>
+      } @else {
+      <div class="subtask-list">
+        @for (s of subtasks(); track s.id) {
+        <div class="subtask-item">
+          <div class="flex-grow-1" style="min-width:0">
+            <div class="fw-semibold">{{ s.titre }}</div>
+            @if (s.description) {
+            <small class="text-muted d-block text-truncate">{{ s.description }}</small>
+            }
+          </div>
+          <span [class]="getSubtaskStatusBadge(s.statut)">{{ getSubtaskStatusLabel(s.statut) }}</span>
+          @if (isEncadrant) {
+          <select class="form-select form-select-sm subtask-status-select"
+            [ngModel]="s.statut" (ngModelChange)="updateSubtaskStatus(s.id, $event)" title="Changer le statut">
+            @for (st of SUBTASK_STATUSES; track st.value) {
+            <option [value]="st.value">{{ st.label }} — {{ st.progress }}%</option>
+            }
+          </select>
+          <button class="btn btn-sm btn-outline-secondary" (click)="openEditSubtask(s)" title="Modifier"><i class="ti ti-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger" (click)="deleteSubtask(s.id)" title="Supprimer"><i class="ti ti-trash"></i></button>
+          }
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    <div class="detail-section">
       <h6>Informations</h6>
       <div class="detail-info-grid">
         <div class="detail-info-item">
@@ -372,6 +436,7 @@
     </div>
 
     <div class="detail-actions">
+      @if (isEncadrant) {
       <button class="btn btn-primary-custom btn-sm me-2" (click)="closeDetail(); openEdit(selectedTask())">
         <i class="ti ti-pencil me-1"></i> Modifier
       </button>
@@ -384,6 +449,7 @@
           <li><a class="dropdown-item text-danger" (click)="updateStatus(selectedTask().id, 'BLOQUEE')">⛔ Bloquée</a></li>
         </ul>
       </div>
+      }
     </div>
   </div>
 </div>
@@ -448,6 +514,48 @@
         <button type="button" class="btn btn-primary-custom" (click)="save()" [disabled]="loading()">
           @if (loading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
           {{ editMode() ? 'Mettre à jour' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ── SUBTASK MODAL ────────────────────────────────────────── -->
+@if (showSubtaskModal()) {
+<div class="modal-backdrop-custom" (click)="closeSubtaskModal()"></div>
+<div class="modal-custom">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ editingSubtaskId ? 'Modifier la sous-tâche' : 'Nouvelle sous-tâche' }}</h5>
+        <button type="button" class="btn-close" (click)="closeSubtaskModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (subtaskError()) { <div class="alert alert-danger">{{ subtaskError() }}</div> }
+        <div class="mb-3">
+          <label class="form-label">Titre *</label>
+          <input type="text" class="form-control" [(ngModel)]="subtaskForm.titre" placeholder="Titre de la sous-tâche" maxlength="200" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" [(ngModel)]="subtaskForm.description" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Statut</label>
+          <select class="form-select" [(ngModel)]="subtaskForm.statut">
+            @for (st of SUBTASK_STATUSES; track st.value) {
+            <option [value]="st.value">{{ st.label }} — {{ st.progress }}%</option>
+            }
+          </select>
+          <small class="text-muted">TODO = 0 %, IN_PROGRESS = 50 %, DONE = 100 %. La progression du parent est calculée automatiquement.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeSubtaskModal()">Annuler</button>
+        <button type="button" class="btn btn-primary-custom" (click)="saveSubtask()" [disabled]="subtasksLoading()">
+          @if (subtasksLoading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          {{ editingSubtaskId ? 'Mettre à jour' : 'Créer' }}
         </button>
       </div>
     </div>

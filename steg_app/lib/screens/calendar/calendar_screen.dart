@@ -129,6 +129,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final events = eventsAsync.value ?? const <CalendarEvent>[];
     final byDay = groupEventsByDay(events);
     final dayEvents = eventsOnDay(byDay, _selected);
+    final finalWeekEnd =
+        ref.watch(dashboardStatsProvider).value?.internship?.dateFin;
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(calendarEventsProvider.future),
@@ -189,6 +191,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               selected: _selected,
               eventsByDay: byDay,
               onSelect: _select,
+              finalWeekEnd: finalWeekEnd,
             )
           else
             WeekStrip(
@@ -196,6 +199,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               selected: _selected,
               eventsByDay: byDay,
               onSelect: _select,
+              finalWeekEnd: finalWeekEnd,
             ),
           const SizedBox(height: 16),
           const CalendarLegend(),

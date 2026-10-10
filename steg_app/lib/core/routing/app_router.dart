@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/candidature.dart';
+import '../../models/note.dart';
 import '../../models/offre.dart';
 import '../../models/reunion.dart';
+import '../../models/tache.dart';
 import '../../providers/auth/auth_provider.dart';
 import '../../providers/onboarding/document_onboarding_provider.dart';
 import '../../providers/onboarding/internship_access_provider.dart';
@@ -20,8 +22,12 @@ import '../../screens/dashboard/my_documents_screen.dart';
 import '../../screens/dashboard/my_meetings_screen.dart';
 import '../../screens/dashboard/my_notifications_screen.dart';
 import '../../screens/dashboard/my_tasks_screen.dart';
+import '../../screens/dashboard/task_details_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/journal/journal_screen.dart';
+import '../../screens/certification/certification_screen.dart';
+import '../../screens/notes/note_editor_screen.dart';
+import '../../screens/notes/notes_list_screen.dart';
 import '../../screens/offres/offre_details_screen.dart';
 import '../../screens/offres/offres_list_screen.dart';
 import '../../screens/onboarding/document_onboarding_screen.dart';
@@ -234,6 +240,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: RoutePaths.taskDetails,
+        builder: (context, state) {
+          final task = state.extra;
+          if (task is! Tache) {
+            return const Scaffold(
+              body: Center(child: Text('Tâche introuvable')),
+            );
+          }
+          return TaskDetailsScreen(task: task);
+        },
+      ),
+      GoRoute(
         path: RoutePaths.mesDocuments,
         builder: (context, state) => const MyDocumentsScreen(),
       ),
@@ -244,6 +262,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.journal,
         builder: (context, state) => const JournalScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.certification,
+        builder: (context, state) => const CertificationScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.notes,
+        builder: (context, state) => const NotesListScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.noteEditor,
+        builder: (context, state) {
+          final note = state.extra;
+          return NoteEditorScreen(note: note is Note ? note : null);
+        },
       ),
       GoRoute(
         path: RoutePaths.planning,

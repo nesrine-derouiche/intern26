@@ -53,6 +53,50 @@ class PdfService {
     doc.end();
   }
 
+  /**
+   * P2-TASK8 — Rendu d'un contenu déjà produit (template ou gabarit
+   * historique) vers un Buffer, avec exactement le même moteur (pdfkit)
+   * et le même style que generateRendered. Utilisé par la génération
+   * d'attestation de certification (stockage + téléchargement).
+   * Méthodes existantes inchangées.
+   */
+  renderTextToPdfBuffer(rendered) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({ margin: 50 });
+        const chunks = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+        setRegular(doc).fontSize(12).fillColor('#2D3748').text(String(rendered ?? ''));
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  /**
+   * P2-TASK8 — Gabarit historique d'attestation vers un Buffer
+   * (même mise en page que generateAttestation, sans la réponse HTTP).
+   */
+  async generateAttestationBuffer(stageId) {
+    const stage = await this._getStagePdfData(stageId);
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({ margin: 50 });
+        const chunks = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+        this._renderAttestationBody(doc, stage);
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
   async _getStagePdfData(stageId) {
     const stage = await stageRepository.findPdfData(stageId);
     if (!stage) throw new ApiError(404, 'Stage introuvable.');

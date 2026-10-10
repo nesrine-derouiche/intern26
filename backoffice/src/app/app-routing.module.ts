@@ -25,7 +25,9 @@ const appRoutes: Routes = [
       { path: 'evaluations', loadComponent: () => import('./demo/pages/evaluations/evaluations.component').then((c) => c.EvaluationsComponent) },
       { path: 'departements', loadComponent: () => import('./demo/pages/departements/departements.component').then((c) => c.DepartementsComponent) },
       { path: 'notifications', loadComponent: () => import('./demo/pages/notifications/notifications.component').then((c) => c.NotificationsComponent) },
-      { path: 'templates', loadComponent: () => import('./demo/pages/templates/document-template.component').then((c) => c.TemplatesComponent) }
+      { path: 'templates', loadComponent: () => import('./demo/pages/templates/document-template.component').then((c) => c.TemplatesComponent) },
+      { path: 'certifications', loadComponent: () => import('./demo/pages/certifications/certifications.component').then((c) => c.CertificationsComponent) },
+      { path: 'certifications/:stageId', loadComponent: () => import('./demo/pages/certifications/certification-review.component').then((c) => c.CertificationReviewComponent) }
     ]
   },
   {

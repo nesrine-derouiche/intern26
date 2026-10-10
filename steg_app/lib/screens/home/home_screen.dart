@@ -229,6 +229,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           color: AppColors.success,
           onTap: () => context.go(RoutePaths.mesTaches),
         ),
+      if (isStagiaire)
+        QuickActionItem(
+          icon: Icons.note_alt_outlined,
+          label: 'Notes',
+          color: AppColors.violet,
+          onTap: () => context.push(RoutePaths.notes),
+        ),
       QuickActionItem(
         icon: Icons.notifications_outlined,
         label: 'Notifications',

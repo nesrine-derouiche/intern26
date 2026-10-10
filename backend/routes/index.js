@@ -27,6 +27,10 @@ const searchRoutes = require('./search.routes');
 const documentRoutes = require('./document.routes');
 const pdfRoutes = require('./pdf.routes');
 const documentTemplateRoutes = require('./document-template.routes');
+const subtaskRoutes = require('./subtask.routes');
+const noteRoutes = require('./note.routes');
+const certificationRoutes = require('./certification.routes');
+const certificationsRoutes = require('./certifications.routes');
 
 router.use('/auth', authRoutes);
 router.use('/candidat', candidatRoutes);
@@ -52,6 +56,10 @@ router.use('/planning', planningRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/search', searchRoutes);
 router.use('/document-templates', documentTemplateRoutes);
+router.use('/notes', noteRoutes);
+router.use('/certifications', certificationsRoutes);
 router.use('/', documentRoutes); // mounted at /api so /stages/:stageId/documents works
+router.use('/', subtaskRoutes); // mounted at /api with absolute /taches/:taskId/* and /subtasks/* paths
 router.use('/stages', pdfRoutes); // mounted at /api/stages so /:stageId/pdf/... works
+router.use('/stages', certificationRoutes); // mounted at /api/stages so /:stageId/certification/... works
 module.exports = router;

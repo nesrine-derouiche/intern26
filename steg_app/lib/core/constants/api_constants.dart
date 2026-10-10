@@ -27,6 +27,12 @@ class ApiConstants {
   static const String myCandidatures = '/candidatures/mes-candidatures';
   static const String dashboardStats = '/dashboard/stats';
   static const String taches = '/taches';
+
+  static String subtasksOfTask(String taskId) => '/taches/$taskId/subtasks';
+
+  static String taskProgress(String taskId) => '/taches/$taskId/progress';
+
+  static String subtaskStatus(String id) => '/subtasks/$id/status';
   static const String reunions = '/reunions';
   static const String notifications = '/notifications';
   static const String notificationsUnread = '/notifications/unread';
@@ -58,6 +64,9 @@ class ApiConstants {
   static String stagePdf(String stageId, String kind) =>
       '/stages/$stageId/pdf/$kind';
 
+  static String certificationDocumentDownload(String stageId, String docId) =>
+      '/stages/$stageId/certification/documents/$docId/download';
+
   static String notificationLire(String id) => '/notifications/$id/lire';
 
   static String notificationDelete(String id) => '/notifications/$id';
@@ -70,6 +79,22 @@ class ApiConstants {
   static const String stagiaireProject = '/stagiaires/projet';
   static const String stagiaireCalendar = '/stagiaires/calendar';
   static const String stagiaireCompletion = '/stagiaires/completion';
+
+  static const String notes = '/notes';
+
+  static String noteById(String id) => '/notes/$id';
+
+  static String certification(String stageId) =>
+      '/stages/$stageId/certification';
+
+  static String certificationDocument(String stageId, String kind) =>
+      '/stages/$stageId/certification/documents/$kind';
+
+  static String certificationSubmit(String stageId) =>
+      '/stages/$stageId/certification/submit';
+
+  static String certificationAttestation(String stageId) =>
+      '/stages/$stageId/certification/attestation';
 
   static String stageComplete(String stageId) => '/stages/$stageId/complete';
 }

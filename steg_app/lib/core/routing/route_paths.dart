@@ -11,6 +11,7 @@ abstract final class RoutePaths {
   static const String candidatureDetails = '/candidatures/:id';
   static const String internDashboard = '/dashboard';
   static const String mesTaches = '/dashboard/taches';
+  static const String taskDetails = '/dashboard/taches/:id';
   static const String monProjet = '/dashboard/projet';
   static const String mesReunions = '/dashboard/reunions';
   static const String meetingDetail = '/dashboard/reunions/:id';
@@ -20,6 +21,9 @@ abstract final class RoutePaths {
   static const String calendrier = '/calendrier';
   static const String planning = '/planning';
   static const String journal = '/journal';
+  static const String notes = '/notes';
+  static const String noteEditor = '/notes/edit';
+  static const String certification = '/certification';
   static const String pointage = '/pointage';
   static const String historiquePresences = '/presences/historique';
   static const String editProfile = '/profile/edit';

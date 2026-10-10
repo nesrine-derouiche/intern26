@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../core/constants/api_constants.dart';
 import '../core/network/api_exception.dart';
 import '../models/paginated_result.dart';
+import '../models/subtask.dart';
 import '../models/tache.dart';
 import '../core/utils/json_utils.dart';
 
@@ -27,6 +28,44 @@ class TacheService {
         total: numOrNull(json['total'])?.toInt() ?? data.length,
         page: numOrNull(json['page'])?.toInt() ?? 1,
         pages: numOrNull(json['pages'])?.toInt() ?? (data.isEmpty ? 0 : 1),
+      );
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<SubtaskListResult> listSubtasks({required String taskId}) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiConstants.subtasksOfTask(taskId),
+      );
+      final json = response.data ?? const {};
+      final data = (json['subtasks'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(Subtask.fromJson)
+          .toList();
+      return SubtaskListResult.fromPayload(
+        subtasks: data,
+        aggregate: json['aggregate'],
+      );
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<Subtask> updateSubtaskStatus({
+    required String id,
+    required SubtaskStatus status,
+  }) async {
+    try {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        ApiConstants.subtaskStatus(id),
+        data: {'statut': status.value},
+      );
+      final json = response.data ?? const {};
+      final subtask = json['subtask'];
+      return Subtask.fromJson(
+        subtask is Map<String, dynamic> ? subtask : {},
       );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);

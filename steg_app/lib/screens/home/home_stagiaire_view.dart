@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/routing/route_paths.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/certification_eligibility.dart';
 import '../../core/utils/date_utils.dart';
 import '../../models/stagiaire_overview.dart';
 import '../../providers/pointage/pointage_providers.dart';
@@ -243,6 +244,16 @@ class HomeStagiaireView extends StatelessWidget {
             const SizedBox(height: 24),
             if (overview.hasStage)
               staggered(_InternshipSection(internship: overview.internship!)),
+            if (overview.hasStage &&
+                isInFinalWeek(
+                    DateTime.now(), overview.internship!.endDate)) ...[
+              const SizedBox(height: 16),
+              staggered(const _CertificationAlert()),
+            ],
+            if (overview.hasStage) ...[
+              const SizedBox(height: 16),
+              staggered(const _DocumentsSection()),
+            ],
             if (overview.project != null) ...[
               const SizedBox(height: 16),
               staggered(_ProjectSection(project: overview.project!)),
@@ -253,10 +264,6 @@ class HomeStagiaireView extends StatelessWidget {
               const SizedBox(height: 16),
               staggered(const _PresenceSection()),
             ],
-            if (overview.hasStage) ...[
-              const SizedBox(height: 16),
-              staggered(const _PlanningSection()),
-            ],
             if (overview.upcomingMeetings.isNotEmpty) ...[
               const SizedBox(height: 16),
               staggered(_MeetingsSection(meetings: overview.upcomingMeetings)),
@@ -264,10 +271,6 @@ class HomeStagiaireView extends StatelessWidget {
             if (overview.journal != null) ...[
               const SizedBox(height: 16),
               staggered(_JournalSection(journal: overview.journal!)),
-            ],
-            if (overview.evaluation != null) ...[
-              const SizedBox(height: 16),
-              staggered(_EvaluationSection(evaluation: overview.evaluation!)),
             ],
           ],
         ),
@@ -360,6 +363,112 @@ class _WelcomeSection extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CertificationAlert extends StatelessWidget {
+  const _CertificationAlert();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.danger.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.verified_outlined,
+              size: 22,
+              color: AppColors.danger,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dernière semaine de stage',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Déposez votre journal et votre rapport pour la validation.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: () => context.push(RoutePaths.certification),
+            child: const Text('Compléter la validation du stage'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DocumentsSection extends StatelessWidget {
+  const _DocumentsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child:
+                    const Icon(Icons.description_outlined, size: 20, color: AppColors.info),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Mes documents',
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Journal, rapport de stage et attestation de fin de stage.',
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => context.push(RoutePaths.mesDocuments),
+              icon: const Icon(Icons.arrow_forward, size: 16),
+              label: const Text('Ouvrir mes documents'),
+            ),
           ),
         ],
       ),
@@ -859,65 +968,6 @@ class _MeetingTile extends StatelessWidget {
   }
 }
 
-class _PlanningSection extends StatelessWidget {
-  const _PlanningSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: const Icon(
-                  Icons.event_note_outlined,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Mon planning',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Réunions, échéances et pointages de la période',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => context.push(RoutePaths.planning),
-              icon: const Icon(Icons.calendar_view_month_outlined, size: 16),
-              label: const Text('Voir le planning'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _PresenceSection extends ConsumerWidget {
   const _PresenceSection();
 
@@ -1183,84 +1233,6 @@ class _JournalStat extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _EvaluationSection extends StatelessWidget {
-  const _EvaluationSection({required this.evaluation});
-  final OverviewEvaluation evaluation;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final note = evaluation.noteFinale;
-
-    return AppCard(
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: evaluation.validee
-                  ? AppColors.success.withValues(alpha: 0.12)
-                  : AppColors.warning.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Icon(
-              evaluation.validee ? Icons.verified_outlined : Icons.grading_outlined,
-              size: 20,
-              color: evaluation.validee ? AppColors.success : AppColors.warning,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Évaluation',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  evaluation.validee
-                      ? (note != null ? 'Note finale : ${note.toStringAsFixed(1)}/20' : 'Évaluation validée')
-                      : 'En attente de validation',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: evaluation.validee ? AppColors.success : AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (note != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _noteColor(note).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                note.toStringAsFixed(1),
-                style: TextStyle(
-                  color: _noteColor(note),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  static Color _noteColor(double note) {
-    if (note >= 16) return AppColors.success;
-    if (note >= 12) return AppColors.info;
-    if (note >= 10) return AppColors.warning;
-    return AppColors.danger;
   }
 }
 
